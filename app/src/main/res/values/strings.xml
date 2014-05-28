@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MMF Remote App Example</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="distance">Distance:</string>
+    <string name="duration">Duration:</string>
+    <string name="speed">Speed:</string>
+    <string name="heartrate">Heart Rate:</string>
+    <string name="calories">Calories:</string>
+    <string name="dash">--</string>
+    <string name="app_state">MMF App State:</string>
+    <string name="total_distance">Total Distance:</string>
+    <string name="average_heart_rate">Average Heart Rate:</string>
+    <string name="total_calories">Total Calories:</string>
+    <string name="total_duration">Total Duration:</string>
+    <string name="average_speed">Average Speed:</string>
+
+</resources>
