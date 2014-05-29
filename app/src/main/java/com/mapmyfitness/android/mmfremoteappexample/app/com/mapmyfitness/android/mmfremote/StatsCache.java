@@ -1,9 +1,12 @@
 package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote;
 
 /**
- * Created by ralph.pina on 5/28/14.
+ * This class caches all the data coming from the MMF apps. Its main purpose is so that
+ * when the user stops the workout you have all possible data you would need to build
+ * a summary UI of their workout. You can also use this class or extend it if you would like to do some
+ * custom caching. All properties have getters and setters.
  */
-public class MmfStatsCache {
+public class StatsCache {
 
     /**
      * Latest heart rate in bpm.
@@ -76,7 +79,7 @@ public class MmfStatsCache {
      */
     private Integer mMaxPower;
 
-    public MmfStatsCache() {
+    public StatsCache() {
         zeroOutValues();
     }
 

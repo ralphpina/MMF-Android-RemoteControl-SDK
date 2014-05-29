@@ -1,20 +1,20 @@
 package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote;
 
 /**
- * Listener used to register with {@link com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteManager}
+ * Listener used to register with {@link RemoteManager}
  * to receive commands from the app. These commands will allow your UI to
  * adjust depending on the state of the MMF app.
  */
-public interface MmfRemoteCommandListener {
+public interface RemoteCommandListener {
 
     /**
      * When your application connects to the MMF app, it will automatically
      * receive a call to this event. Allowing you to immediately adjust your UI
      * depending on the state of the MMF app.
      *
-     * @param appState {@link com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState} the current state of the app
+     * @param appState {@link AppState} the current state of the app
      */
-    public void onAppStateEvent(MmfAppState appState);
+    public void onAppStateEvent(AppState appState);
 
     /**
      * This command is sent by the MMF app whenever a configuation change
@@ -67,36 +67,36 @@ public interface MmfRemoteCommandListener {
      * The user must take one of two actions:
      * - Save the workout, which will produce the {@link #onSaveWorkoutEvent()} event.
      * - Discard the workout, which will produce the {@link #onDiscardWorkoutEvent()} event.
-     * The app will now be in the {@link com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState#POST_RECORDING} state.
+     * The app will now be in the {@link AppState#POST_RECORDING} state.
      */
     public void onStopWorkoutEvent();
 
     /**
-     * The workout has been saved and the app can now return to the {@link com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState#NOT_RECORDING} state.
+     * The workout has been saved and the app can now return to the {@link AppState#NOT_RECORDING} state.
      */
     public void onSaveWorkoutEvent();
 
     /**
-     * The workout has been discarded and the app can now return to the {@link com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState#NOT_RECORDING} state.
+     * The workout has been discarded and the app can now return to the {@link AppState#NOT_RECORDING} state.
      */
     public void onDiscardWorkoutEvent();
 
     /**
      * The current status of the GPS lock on the MMF app. If no GPS is available and the user tries to start
-     * a workout this event will be triggered. If {@link MmfGpsStatus#GPS_NOT_AVAILABLE} then the user can wait for
-     * a GPS lock, at which point this event will be triggered with {@link MmfGpsStatus#GPS_AVAILABLE}, or a workout
-     * may be started at any point without the GPS using {@link MmfRemoteManager#startWithoutGpsCommand()}, or the
-     * workout may be cancelled using {@link MmfRemoteManager#cancelWorkoutStart()}
+     * a workout this event will be triggered. If {@link GpsStatus#GPS_NOT_AVAILABLE} then the user can wait for
+     * a GPS lock, at which point this event will be triggered with {@link GpsStatus#GPS_AVAILABLE}, or a workout
+     * may be started at any point without the GPS using {@link RemoteManager#startWithoutGpsCommand()}, or the
+     * workout may be cancelled using {@link RemoteManager#cancelWorkoutStart()}
      *
-     * @param gpsStatus {@link MmfGpsStatus} with the GPS status of the MMF app
+     * @param gpsStatus {@link GpsStatus} with the GPS status of the MMF app
      */
-    public void onGpsStatusWarning(MmfGpsStatus gpsStatus);
+    public void onGpsStatusWarning(GpsStatus gpsStatus);
 
     /**
      * If the MMF app is opened on the phone, and a user tries to start a workout, and the
      * location services is turned on, a warning wil display on the app. At this point the user can
-     * start without GPS using {@link MmfRemoteManager#startWithoutGpsCommand()} or cancel the
-     * start using {@link MmfRemoteManager#cancelWorkoutStart()} ()}
+     * start without GPS using {@link RemoteManager#startWithoutGpsCommand()} or cancel the
+     * start using {@link RemoteManager#cancelWorkoutStart()} ()}
      */
     public void onLocationServicesStatusEvent();
 

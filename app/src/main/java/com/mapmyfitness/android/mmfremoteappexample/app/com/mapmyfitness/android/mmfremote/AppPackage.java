@@ -15,7 +15,7 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
  *     <li>MapMyFitness+</li>
  * </ul>
  */
-public enum MmfAppPackage {
+public enum AppPackage {
     MAPMYRUN("com.mapmyrun.android2", "com.mapmyrun.android.remote.MAP_MY_FITNESS_REMOTE_SERVICE"),
     MAPMYRUNPLUS("com.mapmyrunplus.android2", "com.mapmyrunplus.android.remote.MAP_MY_FITNESS_REMOTE_SERVICE"),
     MAPMYRIDE("com.mapmyride.android2", "com.mapmyride.android.remote.MAP_MY_FITNESS_REMOTE_SERVICE"),
@@ -30,7 +30,7 @@ public enum MmfAppPackage {
     private final String mPackageName;
     private final String mIntentActionFilter;
 
-    private MmfAppPackage(String packageName, String intentActionFilter) {
+    private AppPackage(String packageName, String intentActionFilter) {
         mPackageName = packageName;
         mIntentActionFilter = intentActionFilter;
     }
@@ -38,7 +38,7 @@ public enum MmfAppPackage {
     /**
      * Checks whether this app equals another
      *
-     * @param otherPackage the other {@link MmfAppPackage} being compared
+     * @param otherPackage the other {@link AppPackage} being compared
      * @return true if they are the same app, false otherwise
      */
     public boolean equalsPackage(String otherPackage){

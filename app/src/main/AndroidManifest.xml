@@ -17,10 +17,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".RecordService"
-            android:enabled="true"/>
-
     </application>
 
 </manifest>

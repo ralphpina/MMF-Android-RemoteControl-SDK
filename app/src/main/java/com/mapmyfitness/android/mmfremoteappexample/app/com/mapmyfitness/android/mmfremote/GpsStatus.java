@@ -8,7 +8,7 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
  *     <li>{@link #GPS_NON_TRACKABLE}</li>
  * </ul>
  */
-public enum MmfGpsStatus {
+public enum GpsStatus {
     /**
      * GPS is available on the phone and the MMF app has locked on a location.
      */

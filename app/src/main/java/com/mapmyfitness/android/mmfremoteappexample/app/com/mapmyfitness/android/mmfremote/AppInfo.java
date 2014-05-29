@@ -2,31 +2,31 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
 
 /**
  * This object describes properties of MMF apps this SDK will connect with.
- * The object contains an {@link MmfAppPackage} enum that contain the package name, a boolean
+ * The object contains an {@link AppPackage} enum that contain the package name, a boolean
  * indicating whether the app is installed, and the version number. They can
  * be used with the Android SDK to get information like the app name
  * and the version number. This object can be retrieved for each of the supported apps
- * listed in {@link MmfAppPackage} using {@link MmfRemoteManager#getAppInfo(MmfAppPackage)}
+ * listed in {@link AppPackage} using {@link RemoteManager#getAppInfo(AppPackage)}
  */
-public class MmfAppInfo {
+public class AppInfo {
 
-    private MmfAppPackage mPackage;
+    private AppPackage mPackage;
     private boolean mIsInstalled;
     private int mVersionNumber;
 
-    public MmfAppInfo(MmfAppPackage aPackage, boolean isInstalled, int versionNumber) {
+    public AppInfo(AppPackage aPackage, boolean isInstalled, int versionNumber) {
         mPackage = aPackage;
         mIsInstalled = isInstalled;
         mVersionNumber = versionNumber;
     }
 
     /**
-     * Get the {@link MmfAppPackage} enum representing the app that
+     * Get the {@link AppPackage} enum representing the app that
      * this info describes;
      *
-     * @return the {@link MmfAppPackage} enum.
+     * @return the {@link AppPackage} enum.
      */
-    public MmfAppPackage getPackage() {
+    public AppPackage getPackage() {
         return mPackage;
     }
 

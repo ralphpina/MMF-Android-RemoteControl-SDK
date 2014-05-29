@@ -1,19 +1,19 @@
 package com.mapmyfitness.android.mmfremoteappexample.app.events;
 
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.AppState;
 
 /**
  * Created by ralph.pina on 5/28/14.
  */
 public class UpdateUiEvent {
 
-    private MmfAppState mMmfAppState;
+    private AppState mAppState;
 
-    public UpdateUiEvent(MmfAppState mmfAppState) {
-        mMmfAppState = mmfAppState;
+    public UpdateUiEvent(AppState appState) {
+        mAppState = appState;
     }
 
-    public MmfAppState getMmfAppState() {
-        return mMmfAppState;
+    public AppState getAppState() {
+        return mAppState;
     }
 }

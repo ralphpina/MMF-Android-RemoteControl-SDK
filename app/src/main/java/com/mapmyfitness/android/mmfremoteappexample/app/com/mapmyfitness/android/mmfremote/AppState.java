@@ -12,7 +12,7 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
  * </ul>
  *
  */
-public enum MmfAppState {
+public enum AppState {
     /**
      * The app is not currently connected to the MMF app
      */

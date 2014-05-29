@@ -11,15 +11,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppInfo;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppPackage;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfGpsStatus;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteCommandListener;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteDataListener;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteException;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteManager;
-import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfStatsCache;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.AppInfo;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.AppPackage;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.AppState;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.GpsStatus;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.RemoteCommandListener;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.RemoteDataListener;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.RemoteException;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.RemoteManager;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.StatsCache;
 
 import java.util.ArrayList;
 
@@ -28,7 +28,7 @@ import butterknife.InjectView;
 import butterknife.OnClick;
 
 
-public class MainActivity extends ActionBarActivity implements MmfRemoteDataListener, MmfRemoteCommandListener, AdapterView.OnItemSelectedListener {
+public class MainActivity extends ActionBarActivity implements RemoteDataListener, RemoteCommandListener, AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "MainActivity";
 
@@ -129,8 +129,8 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @InjectView(R.id.spinner)
     Spinner mAppsSpinner;
 
-    private MmfRemoteManager mMmfRemoteManager;
-    private MmfStatsCache mMmfStatsCache;
+    private RemoteManager mRemoteManager;
+    private StatsCache mStatsCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,24 +139,24 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
 
-        mMmfStatsCache = new MmfStatsCache();
+        mStatsCache = new StatsCache();
 
-        MmfRemoteManager.Builder remoteControlBuilder = MmfRemoteManager.getBuilder();
+        RemoteManager.Builder remoteControlBuilder = RemoteManager.getBuilder();
         remoteControlBuilder.setContext(this);
-        remoteControlBuilder.setStatsCache(mMmfStatsCache);
+        remoteControlBuilder.setStatsCache(mStatsCache);
         remoteControlBuilder.setDataListener(this);
         remoteControlBuilder.setCommandListener(this);
-        remoteControlBuilder.setAppPackage(MmfAppPackage.MAPMYRUN);
+        remoteControlBuilder.setAppPackage(AppPackage.MAPMYRUN);
 
         try {
-            mMmfRemoteManager = remoteControlBuilder.build();
-        } catch (MmfRemoteException e) {
+            mRemoteManager = remoteControlBuilder.build();
+        } catch (RemoteException e) {
             Log.e(TAG, e.getMessage(), e);
         }
 
-        ArrayList<MmfAppInfo> appPackages = mMmfRemoteManager.findInstalledApps();
+        ArrayList<AppInfo> appPackages = mRemoteManager.findInstalledApps();
 
-        ArrayAdapter<MmfAppInfo> adapter = new ArrayAdapter<MmfAppInfo>(this, android.R.layout.simple_spinner_item, appPackages);
+        ArrayAdapter<AppInfo> adapter = new ArrayAdapter<AppInfo>(this, android.R.layout.simple_spinner_item, appPackages);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mAppsSpinner.setAdapter(adapter);
     }
@@ -165,11 +165,11 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     protected void onResume() {
         super.onResume();
         Log.e(TAG, "++ onResume()++");
-        if (!mMmfRemoteManager.isAppConnected()) {
-            updateUi(MmfAppState.APP_NOT_CONNECTED);
+        if (!mRemoteManager.isAppConnected()) {
+            updateUi(AppState.APP_NOT_CONNECTED);
             connectApp();
         } else {
-            mMmfRemoteManager.requestAppState();
+            mRemoteManager.requestAppState();
         }
     }
 
@@ -184,7 +184,10 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
         super.onStop();
     }
 
-    // for spinner
+    /**
+     * For Spinner, you can use this to connect to the select app.
+     * I have not implemented that at this time.
+     */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {
@@ -201,9 +204,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.startButton) void start() {
 //        Log.e(TAG, "++ start()++");
         try {
-            mMmfRemoteManager.startWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.startWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -213,9 +216,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.pauseButton) void pause() {
 //        Log.e(TAG, "++ pause()++");
         try {
-            mMmfRemoteManager.pauseWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.pauseWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -225,9 +228,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.resumeButton) void resume() {
 //        Log.e(TAG, "++ resume()++");
         try {
-            mMmfRemoteManager.resumeWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.resumeWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -237,9 +240,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.stopButton) void stop() {
 //        Log.e(TAG, "++ stop()++");
         try {
-            mMmfRemoteManager.stopWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.stopWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -249,9 +252,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.discardButton) void discard() {
 //        Log.e(TAG, "++ discard()++");
         try {
-            mMmfRemoteManager.discardWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.discardWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -261,9 +264,9 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @OnClick(R.id.saveButton) void save() {
 //        Log.e(TAG, "++ save()++");
         try {
-            mMmfRemoteManager.saveWorkoutCommand();
-        } catch (MmfRemoteException e) {
-            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+            mRemoteManager.saveWorkoutCommand();
+        } catch (RemoteException e) {
+            if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
                 connectApp();
             }
@@ -277,19 +280,19 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
 
     @OnClick(R.id.disconnectButton) void disconnect() {
 //        Log.e(TAG, "++ disconnect()++");
-        mMmfRemoteManager.disconnectFromMmfApp();
+        mRemoteManager.disconnectFromMmfApp();
     }
 
     private void connectApp() {
-        boolean connected = mMmfRemoteManager.tryToConnectToMmfApp();
+        boolean connected = mRemoteManager.tryToConnectToMmfApp();
         Toast.makeText(this, "Connection was successful = " + connected, Toast.LENGTH_LONG);
     }
 
-    private void updateUi(MmfAppState state) {
+    private void updateUi(AppState state) {
         Log.e(TAG, "++ onUpdateUiEvent() ++ state = " + state);
         mAppStateValue.setText(state.toString());
 
-        if (state == MmfAppState.APP_NOT_CONNECTED) {
+        if (state == AppState.APP_NOT_CONNECTED) {
             clearValues();
             mStartButton.setVisibility(View.VISIBLE);
             mStartButton.setEnabled(false);
@@ -300,7 +303,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
             mSaveButton.setVisibility(View.GONE);
             mConnectButton.setVisibility(View.VISIBLE);
             mDisconnectButton.setVisibility(View.GONE);
-        } else if (state == MmfAppState.APP_NOT_INSTALLED || state == MmfAppState.NOT_RECORDING) {
+        } else if (state == AppState.APP_NOT_INSTALLED || state == AppState.NOT_RECORDING) {
             Log.e(TAG, "++ onUpdateUiEvent() ++ state first");
             clearValues();
             mStartButton.setVisibility(View.VISIBLE);
@@ -312,7 +315,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
             mSaveButton.setVisibility(View.GONE);
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
-        } else if (state == MmfAppState.RECORDING) {
+        } else if (state == AppState.RECORDING) {
             Log.e(TAG, "++ onUpdateUiEvent() ++ state second");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.VISIBLE);
@@ -322,7 +325,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
             mSaveButton.setVisibility(View.GONE);
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
-        } else if (state == MmfAppState.RECORDING_PAUSED) {
+        } else if (state == AppState.RECORDING_PAUSED) {
             Log.e(TAG, "++ onUpdateUiEvent() ++ state third");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.GONE);
@@ -332,7 +335,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
             mSaveButton.setVisibility(View.GONE);
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
-        } else if (state == MmfAppState.POST_RECORDING) {
+        } else if (state == AppState.POST_RECORDING) {
             Log.e(TAG, "++ onUpdateUiEvent() ++ state fourth");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.GONE);
@@ -346,7 +349,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     }
 
     private void clearValues() {
-        mMmfStatsCache.zeroOutValues();
+        mStatsCache.zeroOutValues();
 
         mCaloriesValue.setText(getString(R.string.dash));
         mDistanceValue.setText(getString(R.string.dash));
@@ -371,7 +374,7 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     }
 
     @Override
-    public void onAppStateEvent(MmfAppState appState) {
+    public void onAppStateEvent(AppState appState) {
 //        Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
 //        Toast.makeText(this, "App state = " + appState, Toast.LENGTH_LONG);
         updateUi(appState);
@@ -385,41 +388,41 @@ public class MainActivity extends ActionBarActivity implements MmfRemoteDataList
     @Override
     public void onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
         Toast.makeText(this, "Workout started", Toast.LENGTH_LONG);
-        //EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.RECORDING));
+        //EventBus.getInstance().post(new UpdateUiEvent(AppState.RECORDING));
     }
 
     @Override
     public void onPauseWorkoutEvent() {
         //Toast.makeText(this, "Workout paused", Toast.LENGTH_LONG);
-        updateUi(MmfAppState.RECORDING_PAUSED);
+        updateUi(AppState.RECORDING_PAUSED);
     }
 
     @Override
     public void onResumeWorkoutEvent() {
         //Toast.makeText(this, "Workout Resumed", Toast.LENGTH_LONG);
-        updateUi(MmfAppState.RECORDING);
+        updateUi(AppState.RECORDING);
     }
 
     @Override
     public void onStopWorkoutEvent() {
 //        Toast.makeText(this, "Workout stopped", Toast.LENGTH_LONG);
-        updateUi(MmfAppState.POST_RECORDING);
+        updateUi(AppState.POST_RECORDING);
     }
 
     @Override
     public void onSaveWorkoutEvent() {
 //        Toast.makeText(this, "Workout saved", Toast.LENGTH_LONG);
-        updateUi(MmfAppState.NOT_RECORDING);
+        updateUi(AppState.NOT_RECORDING);
     }
 
     @Override
     public void onDiscardWorkoutEvent() {
 //        Toast.makeText(this, "Workout discarded", Toast.LENGTH_LONG);
-        updateUi(MmfAppState.NOT_RECORDING);
+        updateUi(AppState.NOT_RECORDING);
     }
 
     @Override
-    public void onGpsStatusWarning(MmfGpsStatus gpsStatus) {
+    public void onGpsStatusWarning(GpsStatus gpsStatus) {
 
     }
 
