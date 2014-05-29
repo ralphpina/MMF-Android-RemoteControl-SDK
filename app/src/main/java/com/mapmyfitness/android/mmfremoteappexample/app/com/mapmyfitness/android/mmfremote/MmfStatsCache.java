@@ -6,11 +6,6 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
 public class MmfStatsCache {
 
     /**
-     * Keep the last app state
-     */
-    private MmfAppState mMmfAppState;
-
-    /**
      * Latest heart rate in bpm.
      */
     private Integer mHeartRate;
@@ -81,19 +76,8 @@ public class MmfStatsCache {
      */
     private Integer mMaxPower;
 
-    // singleton
-    private static MmfStatsCache mMmfStatsCache;
-
-    private MmfStatsCache() {
+    public MmfStatsCache() {
         zeroOutValues();
-    }
-
-    public static MmfStatsCache getInstance() {
-        if (mMmfStatsCache == null) {
-            mMmfStatsCache = new MmfStatsCache();
-        }
-
-        return mMmfStatsCache;
     }
 
     /**
@@ -122,22 +106,6 @@ public class MmfStatsCache {
         mPower = 0;
         mAveragePower = 0;
         mMaxPower = 0;
-    }
-
-    public MmfAppState getMmfAppState() {
-        return mMmfAppState;
-    }
-
-    public void setMmfAppState(MmfAppState mmfAppState) {
-        mMmfAppState = mmfAppState;
-    }
-
-    public static MmfStatsCache getmMmfStatsCache() {
-        return mMmfStatsCache;
-    }
-
-    public static void setmMmfStatsCache(MmfStatsCache mMmfStatsCache) {
-        MmfStatsCache.mMmfStatsCache = mMmfStatsCache;
     }
 
     public Integer getHeartRate() {
@@ -266,13 +234,5 @@ public class MmfStatsCache {
 
     public void setMaxPower(Integer maxPower) {
         mMaxPower = maxPower;
-    }
-
-    public MmfStatsCache getMmfStatsCache() {
-        return mMmfStatsCache;
-    }
-
-    public void setMmfStatsCache(MmfStatsCache mmfStatsCache) {
-        mMmfStatsCache = mmfStatsCache;
     }
 }

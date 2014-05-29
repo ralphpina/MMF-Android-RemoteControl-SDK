@@ -37,7 +37,7 @@ public class RecordService extends Service implements MmfRemoteDataListener, Mmf
         super.onCreate();
         Log.e(TAG, "++ onCreate() ++");
         EventBus.getInstance().register(this);
-        mMmfRemoteManager = mMmfRemoteManager.getInstance(this);
+        //mMmfRemoteManager = mMmfRemoteManager.getInstance(this);
         mMmfRemoteManager.setCommandListener(this);
         mMmfRemoteManager.setDataListener(this);
     }
@@ -64,72 +64,72 @@ public class RecordService extends Service implements MmfRemoteDataListener, Mmf
 
     @Subscribe
     public void onCommandEvent(CommandEvent event) {
-        Log.e(TAG, "++ onCommandEvent() ++");
-        if (event.getCommand().equals("START")) {
-            mMmfRemoteManager.startWorkoutCommand();
-        } else if (event.getCommand().equals("PAUSE")) {
-            mMmfRemoteManager.pauseWorkoutCommand();
-        } else if (event.getCommand().equals("RESUME")) {
-            mMmfRemoteManager.resumeWorkoutCommand();
-        } else if (event.getCommand().equals("STOP")) {
-            mMmfRemoteManager.stopWorkoutCommand();
-        } else if (event.getCommand().equals("DISCARD")) {
-            mMmfRemoteManager.discardWorkoutCommand();
-        } else if (event.getCommand().equals("SAVE")) {
-            mMmfRemoteManager.saveWorkoutCommand();
-        } else if (event.getCommand().equals("CONNECT")) {
-            mMmfRemoteManager.connectToMmfApp();
-        } else if (event.getCommand().equals("DISCONNECT")) {
-            mMmfRemoteManager.disconnectFromMmfApp();
-        }
+//        Log.e(TAG, "++ onCommandEvent() ++");
+//        if (event.getCommand().equals("START")) {
+//            mMmfRemoteManager.startWorkoutCommand();
+//        } else if (event.getCommand().equals("PAUSE")) {
+//            mMmfRemoteManager.pauseWorkoutCommand();
+//        } else if (event.getCommand().equals("RESUME")) {
+//            mMmfRemoteManager.resumeWorkoutCommand();
+//        } else if (event.getCommand().equals("STOP")) {
+//            mMmfRemoteManager.stopWorkoutCommand();
+//        } else if (event.getCommand().equals("DISCARD")) {
+//            mMmfRemoteManager.discardWorkoutCommand();
+//        } else if (event.getCommand().equals("SAVE")) {
+//            mMmfRemoteManager.saveWorkoutCommand();
+//        } else if (event.getCommand().equals("CONNECT")) {
+//            mMmfRemoteManager.connectToMmfApp();
+//        } else if (event.getCommand().equals("DISCONNECT")) {
+//            mMmfRemoteManager.disconnectFromMmfApp();
+//        }
     }
 
     @Override
     public void onAppStateEvent(MmfAppState appState) {
-        Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
-        Toast.makeText(this, "App state = " + appState, Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+//        Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
+//        Toast.makeText(this, "App state = " + appState, Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(appState));
     }
 
     @Override
     public void onAppConfiguredEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
-        Toast.makeText(this, "App configured", Toast.LENGTH_LONG);
+        //Toast.makeText(this, "App configured", Toast.LENGTH_LONG);
     }
 
     @Override
     public void onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
         Toast.makeText(this, "Workout started", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+        //EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.RECORDING));
     }
 
     @Override
     public void onPauseWorkoutEvent() {
-        Toast.makeText(this, "Workout paused", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+        //Toast.makeText(this, "Workout paused", Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.RECORDING_PAUSED));
     }
 
     @Override
     public void onResumeWorkoutEvent() {
-        Toast.makeText(this, "Workout Resumed", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+        //Toast.makeText(this, "Workout Resumed", Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.RECORDING));
     }
 
     @Override
     public void onStopWorkoutEvent() {
-        Toast.makeText(this, "Workout stopped", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+//        Toast.makeText(this, "Workout stopped", Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.POST_RECORDING));
     }
 
     @Override
     public void onSaveWorkoutEvent() {
-        Toast.makeText(this, "Workout saved", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+//        Toast.makeText(this, "Workout saved", Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.NOT_RECORDING));
     }
 
     @Override
     public void onDiscardWorkoutEvent() {
-        Toast.makeText(this, "Workout discarded", Toast.LENGTH_LONG);
-        EventBus.getInstance().post(new UpdateUiEvent());
+//        Toast.makeText(this, "Workout discarded", Toast.LENGTH_LONG);
+        EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.NOT_RECORDING));
     }
 
     @Override
@@ -139,6 +139,11 @@ public class RecordService extends Service implements MmfRemoteDataListener, Mmf
 
     @Override
     public void onLocationServicesStatusEvent() {
+
+    }
+
+    @Override
+    public void onForceUpgrade(Integer minSdkVersion) {
 
     }
 

@@ -86,7 +86,7 @@ public interface MmfRemoteCommandListener {
      * a workout this event will be triggered. If {@link MmfGpsStatus#GPS_NOT_AVAILABLE} then the user can wait for
      * a GPS lock, at which point this event will be triggered with {@link MmfGpsStatus#GPS_AVAILABLE}, or a workout
      * may be started at any point without the GPS using {@link MmfRemoteManager#startWithoutGpsCommand()}, or the
-     * workout may be cancelled using {@link MmfRemoteManager#cancelWorkoutStartCommand()}
+     * workout may be cancelled using {@link MmfRemoteManager#cancelWorkoutStart()}
      *
      * @param gpsStatus {@link MmfGpsStatus} with the GPS status of the MMF app
      */
@@ -96,7 +96,16 @@ public interface MmfRemoteCommandListener {
      * If the MMF app is opened on the phone, and a user tries to start a workout, and the
      * location services is turned on, a warning wil display on the app. At this point the user can
      * start without GPS using {@link MmfRemoteManager#startWithoutGpsCommand()} or cancel the
-     * start using {@link MmfRemoteManager#cancelWorkoutStartCommand()} ()}
+     * start using {@link MmfRemoteManager#cancelWorkoutStart()} ()}
      */
     public void onLocationServicesStatusEvent();
+
+    /**
+     * The phone has requested that this SDK be upgraded above the minSdkVersion. If you continue
+     * to use an SDK version below this MMF will not be able to support it, nor can we guarantee the
+     * behavior.
+     *
+     * @param minSdkVersion the minimum SDK version that the connected app supports.
+     */
+    public void onForceUpgrade(Integer minSdkVersion);
 }

@@ -1,6 +1,10 @@
 package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+
+import java.util.ArrayList;
 
 /**
  * Created by ralph.pina on 5/27/14.
@@ -9,28 +13,27 @@ public class MmfRemoteManager {
 
     private static final String TAG = "MmfRemComLogger";
 
-    private final static String VERSION_NUMBER = "0100000"; //xx major xx minor xxx patch
-    private final static String MMF_REMOTE_FILTER_ACTION = "com.mapmyfitness.android.remote.MAP_MY_FITNESS_REMOTE_SERVICE";
-
     private Context mContext;
-
-    // TODO do we want to check for each package and send an event when a package is installed? R.Pina 20140528
-//    private boolean mAppInstalled = false;
-    // used to check whether one of the MMF apps is installed
-//    private PackageInfo mPackageInfo;
-    // BroadcastReceiver to get notification when app is installed
-//    private PackageChangeReceiver mPackageChangeReceiver;
-
     private MmfRemoteCommunication mMmfRemoteCommunication;
+    private MmfAppPackage mAppPackage;
 
-    // singleton
-    private static MmfRemoteManager sMmfRemoteManager;
-    private MmfRemoteManager(Context context) {
-        mContext = context;
-
+    private MmfRemoteManager(Builder init) {
         mMmfRemoteCommunication = new MmfRemoteCommunication();
 
-        // TODO do we want to check for each package and send an event when a package is installed? R.Pina 20140528
+        this.mContext = init.context;
+        if (init.context != null) {
+            mContext = init.context;
+        }
+        if (init.appPackage != null) {
+            mAppPackage = init.appPackage;
+        }
+        mMmfRemoteCommunication.setDataListener(init.dataListener);
+        mMmfRemoteCommunication.setCommandListener(init.commandListener);
+        if (init.statsCache != null) {
+            mMmfRemoteCommunication.setStatsCache(init.statsCache);
+        }
+    }
+
         // register a receiver to learn when our companion app
         // is installed or uninstalled
 //        mPackageChangeReceiver = new PackageChangeReceiver();
@@ -40,57 +43,43 @@ public class MmfRemoteManager {
 //        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
 //        filter.addDataScheme("package");
 //        mContext.registerReceiver(mPackageChangeReceiver, filter);
+
+    /**
+     * get the version number of this SDK. It will be versioned accordingly:
+     * - First 3 digits are patches
+     * - Fourth and fifth digits are minor
+     * - Sixth and seventh digits are major releases.
+     * Thus, a version might look like 1010300. That would be equivalent to 1.1.3.
+     *
+     * @return version number of the SDK
+     */
+    public int getVersionNumber() {
+        return mMmfRemoteCommunication.REMOTE_CONTROL_SDK_VERSION_NUMBER;
     }
 
-    public static MmfRemoteManager getInstance(Context context) {
-        if (sMmfRemoteManager == null) {
-            sMmfRemoteManager = new MmfRemoteManager(context);
-        }
-        return sMmfRemoteManager;
-    }
 
-    // TODO do we want to check for each package and send an event when a package is installed? R.Pina 20140528
-//    private PackageInfo checkMmfAppIsInstalled() {
-//        PackageManager pm = mContext.getPackageManager();
-//        PackageInfo pi = null;
-//
-//        try {
-//            String companionApp = getString(R.string.companionAppPackage);
-//            Log.d(TAG, "SamsungGearProviderImpl ++ checkAppIsInstalled ++ companionApp = " + companionApp);
-//            pi = pm.getPackageInfo(companionApp, PackageManager.GET_ACTIVITIES);
-//            mAppInstalled = true;
-//        } catch (PackageManager.NameNotFoundException e) {
-//            // app is not install
-//            mAppInstalled = false;
-//            Log.d(TAG, "SamsungGearProviderImpl ++ checkAppIsInstalled ++ app is not installed");
-//        }
-//
-//        return pi;
-//    }
-
-    public void connectToMmfApp() {
-//        if (mmfRemoteCommandListener == null) {
-//            throw new IllegalArgumentException("Required MmfRemoteCommandListener missing");
-//        }
-//        if (mmfRemoteDataListener == null) {
-//            throw new IllegalArgumentException("Required MmfRemoteDataListener missing");
-//        }
-//        Log.e(TAG, "mMmfRemoteCommunication.isBound() = " + mMmfRemoteCommunication.isBound());
-        if (mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is already connected to an MMF app, call {@link #disconnectFromMmfApp} before trying to connect");
-        }
-        // try to connect
-        boolean connected = mMmfRemoteCommunication.onConnectionEstablished(mContext, MMF_REMOTE_FILTER_ACTION);
-        // connection not successful, assume app is not installed
-        if (!connected) {
-            //mmfRemoteCommandListener.onAppStateEvent(MmfAppState.APP_NOT_INSTALLED);
+    public boolean tryToConnectToMmfApp() {
+        if (!isAppConnected()) {
+            return mMmfRemoteCommunication.onConnectionTried(mContext, mAppPackage.getIntentActionFilter());
         } else {
-            //mMmfRemoteCommunication.sendVersionNumber(VERSION_NUMBER);
+            return true;
         }
     }
 
-    private boolean tryToConnectToMmfApp() {
-        return mMmfRemoteCommunication.onConnectionEstablished(mContext, MMF_REMOTE_FILTER_ACTION);
+    public MmfAppPackage getAppPackage() {
+        return mAppPackage;
+    }
+
+    public void setAppPackage(MmfAppPackage appPackage) {
+        mAppPackage = appPackage;
+    }
+
+    public void setStatsCache(MmfStatsCache statsCache) {
+        mMmfRemoteCommunication.setStatsCache(statsCache);
+    }
+
+    public MmfStatsCache getStatsCache() {
+        return mMmfRemoteCommunication.getStatsCache();
     }
 
     public void setDataListener(MmfRemoteDataListener mmfRemoteDataListener) {
@@ -102,67 +91,62 @@ public class MmfRemoteManager {
     }
 
     public void disconnectFromMmfApp() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to disconnect");
+        if (isAppConnected()) {
+            mMmfRemoteCommunication.onConnectionClosed(mContext);
         }
-        mMmfRemoteCommunication.onConnectionClosed(mContext);
     }
 
-    public void startWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to start a workout");
-        }
+    public void startWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.startCommand();
     }
 
-    public void pauseWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to pause a workout");
-        }
+    public void pauseWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.pauseCommand();
     }
 
-    public void resumeWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to resume a workout");
-        }
+    public void resumeWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.resumeCommand();
     }
 
-    public void stopWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to stop a workout");
-        }
+    public void stopWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.stopCommand();
     }
 
-    public void discardWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to discard a workout");
-        }
+    public void discardWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.discardCommand();
     }
 
-    public void saveWorkoutCommand() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to save a workout");
-        }
+    public void saveWorkoutCommand() throws MmfRemoteException {
+        checkIsBound();
         mMmfRemoteCommunication.saveCommand();
     }
 
-    public void startWithoutGpsCommand() {
+    public void startWithoutGpsCommand() throws MmfRemoteException {
         checkIsBound();
         mMmfRemoteCommunication.startWithoutGpsCommand();
     }
 
-    public void cancelWorkoutStartCommand() {
+    public void cancelWorkoutStart() throws MmfRemoteException {
         checkIsBound();
         mMmfRemoteCommunication.cancelWorkoutStartCommand();
     }
 
-    private void checkIsBound() {
-        if (!mMmfRemoteCommunication.isBound()) {
-            throw new IllegalStateException("App is not connected to an MMF app, call {@link #connectToMmfApp} before trying to cancel a workout start");
+    public void requestAppState() {
+        if (!isAppConnected()) {
+            mMmfRemoteCommunication.getCurrentStateCommand();
+        } else if (mMmfRemoteCommunication.getCommandListener() != null) {
+            mMmfRemoteCommunication.getCommandListener().onAppStateEvent(MmfAppState.APP_NOT_INSTALLED);
+        }
+    }
+
+    private void checkIsBound() throws MmfRemoteException {
+        if (!isAppConnected()) {
+            throw new MmfRemoteException(MmfRemoteException.Code.APP_NOT_CONNECTED, "App is not connected to an MMF app");
         }
     }
 
@@ -170,32 +154,131 @@ public class MmfRemoteManager {
         return mMmfRemoteCommunication.isBound();
     }
 
-    private enum MmfAppPackages {
-        MAPMYRUN("com.mapmyrun.android2"),
-        MAPMYRUNPLUS("com.mapmyrunplus.android2"),
-        MAPMYRIDE("com.mapmyride.android2"),
-        MAPMYRIDEPLUS("com.mapmyrideplus.android2"),
-        MAPMYWALK("com.mapmywalk.android2"),
-        MAPMYWALKPLUS("com.mapmywalkplus.android2"),
-        MAPMYFITNESS("com.mapmyfitness.android2"),
-        MAPMYFITNESSPLUS("com.mapmyfitnessplus.android2"),
-        MAPMYHIKE("com.mapmyhike.android2"),
-        MAPMYHIKEPLUS("com.mapmyhikeplus.android2");
+    public ArrayList<MmfAppInfo> findInstalledApps() {
+        MmfAppInfo appInfo;
+        ArrayList<MmfAppInfo> appInfoList = new ArrayList<MmfAppInfo>();
 
-        private final String mPackageName;
-
-        private MmfAppPackages(String packageName) {
-            mPackageName = packageName;
+        // try each of the 10 apps
+        appInfo = getAppInfo(MmfAppPackage.MAPMYFITNESS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
         }
 
-        public boolean equalsPackage(String otherPackage){
-            return (otherPackage == null) ? false : mPackageName.equals(otherPackage);
+        appInfo = getAppInfo(MmfAppPackage.MAPMYFITNESSPLUS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
         }
 
-        public String toString(){
-            return mPackageName;
+        appInfo = getAppInfo(MmfAppPackage.MAPMYRUN);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYRUNPLUS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYRIDE);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYRIDEPLUS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYHIKE);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYHIKEPLUS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYWALK);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        appInfo = getAppInfo(MmfAppPackage.MAPMYWALKPLUS);
+        if (appInfo.isInstalled()) {
+            appInfoList.add(appInfo);
+        }
+
+        return appInfoList;
+    }
+
+    public MmfAppInfo getAppInfo(MmfAppPackage mmfAppPackage) {
+        PackageManager pm = mContext.getPackageManager();
+        MmfAppInfo appInfo;
+
+        try {
+            PackageInfo pi = pm.getPackageInfo(mmfAppPackage.toString(), PackageManager.GET_ACTIVITIES);
+            appInfo = new MmfAppInfo(mmfAppPackage, true, pi.versionCode);
+        } catch (PackageManager.NameNotFoundException e) {
+            // app is not install
+            appInfo = new MmfAppInfo(mmfAppPackage, false, 0);
+        }
+
+        return appInfo;
+    }
+
+    public static Builder getBuilder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        Context context;
+        MmfAppPackage appPackage;
+        MmfRemoteDataListener dataListener;
+        MmfRemoteCommandListener commandListener;
+        MmfStatsCache statsCache;
+
+        private Builder() {
+        }
+
+        public Builder setContext(Context context) {
+            this.context = context;
+            return this;
+        }
+
+        public Builder setAppPackage(MmfAppPackage appPackage) {
+            this.appPackage = appPackage;
+            return this;
+        }
+
+        public Builder setDataListener(MmfRemoteDataListener dataListener) {
+            this.dataListener = dataListener;
+            return this;
+        }
+
+        public Builder setCommandListener(MmfRemoteCommandListener commandListener) {
+            this.commandListener = commandListener;
+            return this;
+        }
+
+        public Builder setStatsCache(MmfStatsCache statsCache) {
+            this.statsCache = statsCache;
+            return this;
+        }
+
+        public MmfRemoteManager build() throws MmfRemoteException {
+            synchronized (MmfRemoteManager.class) {
+                if (context == null) {
+                    throw new MmfRemoteException(MmfRemoteException.Code.CONTEXT_NEEDED, "A context needs to be set to build the object");
+                }
+
+                MmfRemoteManager newInstance = new MmfRemoteManager(this);
+
+                return newInstance;
+            }
         }
     }
+
 
     // TODO do we want to check for each package and send an event when a package is installed? R.Pina 20140528
 //    private class PackageChangeReceiver extends BroadcastReceiver {
@@ -213,7 +296,7 @@ public class MmfRemoteManager {
 //                } else {
 //                    Log.d(TAG, "PackageChangeReceiver ++ onReceive ++ new app version " + mPackageInfo.versionCode);
 //                    mSamsungGearManager.sendCommandToWatch(APP_INSTALLED);
-//                    mSamsungGearManager.onConnectionEstablished();
+//                    mSamsungGearManager.onConnectionTried();
 //                }
 //            } else {
 //                Log.d(TAG, "PackageChangeReceiver ++ onReceive ++ app NOT installed");

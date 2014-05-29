@@ -9,6 +9,11 @@
     android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="com.mapmyfitness.android.mmfremoteappexample.app.MainActivity">
 
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner"/>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -347,31 +352,36 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Pause Workout"
-                android:id="@+id/pauseButton" />
+                android:id="@+id/pauseButton"
+                android:visibility="gone"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Resume Workout"
-                android:id="@+id/resumeButton" />
+                android:id="@+id/resumeButton"
+                android:visibility="gone"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Stop Workout"
-                android:id="@+id/stopButton" />
+                android:id="@+id/stopButton"
+                android:visibility="gone"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Discard Workout"
-                android:id="@+id/discardButton" />
+                android:id="@+id/discardButton"
+                android:visibility="gone"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Save Workout"
-                android:id="@+id/saveButton" />
+                android:id="@+id/saveButton"
+                android:visibility="gone" />
 
             <Button
                 android:layout_width="wrap_content"
@@ -383,7 +393,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Disconnect From MMf App"
-                android:id="@+id/disconnectButton" />
+                android:id="@+id/disconnectButton"
+                android:visibility="gone" />
 
         </LinearLayout>
 

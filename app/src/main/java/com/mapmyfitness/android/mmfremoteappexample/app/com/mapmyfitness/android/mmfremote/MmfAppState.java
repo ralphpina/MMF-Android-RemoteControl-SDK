@@ -14,6 +14,10 @@ package com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.androi
  */
 public enum MmfAppState {
     /**
+     * The app is not currently connected to the MMF app
+     */
+    APP_NOT_CONNECTED,
+    /**
      * A companion MMF app has not been installed on the device. At this time, we
      * support:
      * <ul>

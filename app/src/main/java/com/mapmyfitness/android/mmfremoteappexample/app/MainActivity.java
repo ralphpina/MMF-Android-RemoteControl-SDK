@@ -1,33 +1,34 @@
 package com.mapmyfitness.android.mmfremoteappexample.app;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppInfo;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppPackage;
 import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfAppState;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfGpsStatus;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteCommandListener;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteDataListener;
+import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteException;
 import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfRemoteManager;
 import com.mapmyfitness.android.mmfremoteappexample.app.com.mapmyfitness.android.mmfremote.MmfStatsCache;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.CadenceEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.CalorieEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.CommandEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.DistanceEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.DurationEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.EventBus;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.HeartRateEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.PowerEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.SpeedEvent;
-import com.mapmyfitness.android.mmfremoteappexample.app.events.UpdateUiEvent;
-import com.squareup.otto.Subscribe;
+
+import java.util.ArrayList;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements MmfRemoteDataListener, MmfRemoteCommandListener, AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "MainActivity";
 
@@ -108,7 +109,6 @@ public class MainActivity extends ActionBarActivity {
     @InjectView(R.id.powerMaxValue)
     TextView mPowerMaxValue;
 
-
     @InjectView(R.id.startButton)
     Button mStartButton;
     @InjectView(R.id.pauseButton)
@@ -123,8 +123,14 @@ public class MainActivity extends ActionBarActivity {
     Button mSaveButton;
     @InjectView(R.id.connectButton)
     Button mConnectButton;
-    @InjectView(R.id.discardButton)
+    @InjectView(R.id.disconnectButton)
     Button mDisconnectButton;
+
+    @InjectView(R.id.spinner)
+    Spinner mAppsSpinner;
+
+    private MmfRemoteManager mMmfRemoteManager;
+    private MmfStatsCache mMmfStatsCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,126 +138,215 @@ public class MainActivity extends ActionBarActivity {
         Log.e(TAG, "++ onCreate()++");
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
+
+        mMmfStatsCache = new MmfStatsCache();
+
+        MmfRemoteManager.Builder remoteControlBuilder = MmfRemoteManager.getBuilder();
+        remoteControlBuilder.setContext(this);
+        remoteControlBuilder.setStatsCache(mMmfStatsCache);
+        remoteControlBuilder.setDataListener(this);
+        remoteControlBuilder.setCommandListener(this);
+        remoteControlBuilder.setAppPackage(MmfAppPackage.MAPMYRUN);
+
+        try {
+            mMmfRemoteManager = remoteControlBuilder.build();
+        } catch (MmfRemoteException e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
+
+        ArrayList<MmfAppInfo> appPackages = mMmfRemoteManager.findInstalledApps();
+
+        ArrayAdapter<MmfAppInfo> adapter = new ArrayAdapter<MmfAppInfo>(this, android.R.layout.simple_spinner_item, appPackages);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mAppsSpinner.setAdapter(adapter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Log.e(TAG, "++ onResume()++");
-        EventBus.getInstance().register(this);
-
-        Intent recordServiceIntent = new Intent(this, RecordService.class);
-        startService(recordServiceIntent);
+        if (!mMmfRemoteManager.isAppConnected()) {
+            updateUi(MmfAppState.APP_NOT_CONNECTED);
+            connectApp();
+        } else {
+            mMmfRemoteManager.requestAppState();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.e(TAG, "++ onPause()++");
-        EventBus.getInstance().unregister(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    // for spinner
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view,
+                               int pos, long id) {
+        // An item was selected. You can retrieve the selected item using
+        // parent.getItemAtPosition(pos)
+    }
+
+    // for spinner
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Another interface callback
     }
 
     @OnClick(R.id.startButton) void start() {
-        Log.e(TAG, "++ start()++");
-        EventBus.getInstance().post(new CommandEvent("START"));
+//        Log.e(TAG, "++ start()++");
+        try {
+            mMmfRemoteManager.startWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.pauseButton) void pause() {
-        Log.e(TAG, "++ pause()++");
-        EventBus.getInstance().post(new CommandEvent("PAUSE"));
+//        Log.e(TAG, "++ pause()++");
+        try {
+            mMmfRemoteManager.pauseWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.resumeButton) void resume() {
-        Log.e(TAG, "++ resume()++");
-        EventBus.getInstance().post(new CommandEvent("RESUME"));
+//        Log.e(TAG, "++ resume()++");
+        try {
+            mMmfRemoteManager.resumeWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.stopButton) void stop() {
-        Log.e(TAG, "++ stop()++");
-        EventBus.getInstance().post(new CommandEvent("STOP"));
+//        Log.e(TAG, "++ stop()++");
+        try {
+            mMmfRemoteManager.stopWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.discardButton) void discard() {
-        Log.e(TAG, "++ discard()++");
-        EventBus.getInstance().post(new CommandEvent("DISCARD"));
+//        Log.e(TAG, "++ discard()++");
+        try {
+            mMmfRemoteManager.discardWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.saveButton) void save() {
-        Log.e(TAG, "++ save()++");
-        EventBus.getInstance().post(new CommandEvent("SAVE"));
+//        Log.e(TAG, "++ save()++");
+        try {
+            mMmfRemoteManager.saveWorkoutCommand();
+        } catch (MmfRemoteException e) {
+            if (e.getCode() == MmfRemoteException.Code.APP_NOT_CONNECTED) {
+                // Do something on the UI
+                connectApp();
+            }
+        }
     }
 
     @OnClick(R.id.connectButton) void connect() {
-        Log.e(TAG, "++ connect()++");
-        EventBus.getInstance().post(new CommandEvent("CONNECT"));
+//        Log.e(TAG, "++ connect()++");
+        connectApp();
     }
 
     @OnClick(R.id.disconnectButton) void disconnect() {
-        Log.e(TAG, "++ disconnect()++");
-        EventBus.getInstance().post(new CommandEvent("DISCONNECT"));
+//        Log.e(TAG, "++ disconnect()++");
+        mMmfRemoteManager.disconnectFromMmfApp();
     }
 
-    @Subscribe
-    public void onUpdateUiEvent(UpdateUiEvent event) {
-        Log.e(TAG, "++ onUpdateUiEvent()++");
-        MmfAppState appState = MmfStatsCache.getInstance().getMmfAppState();
+    private void connectApp() {
+        boolean connected = mMmfRemoteManager.tryToConnectToMmfApp();
+        Toast.makeText(this, "Connection was successful = " + connected, Toast.LENGTH_LONG);
+    }
 
-        mAppStateValue.setText(appState.toString());
+    private void updateUi(MmfAppState state) {
+        Log.e(TAG, "++ onUpdateUiEvent() ++ state = " + state);
+        mAppStateValue.setText(state.toString());
 
-        if (!MmfRemoteManager.getInstance(this).isAppConnected()) {
+        if (state == MmfAppState.APP_NOT_CONNECTED) {
             clearValues();
-//            mStartButton.setVisibility(View.VISIBLE);
-//            mStartButton.setEnabled(false);
-//            mPauseButton.setVisibility(View.GONE);
-//            mResumeButton.setVisibility(View.GONE);
-//            mStopButton.setVisibility(View.GONE);
-//            mDiscardButton.setVisibility(View.GONE);
-//            mSaveButton.setVisibility(View.GONE);
-//            mConnectButton.setVisibility(View.VISIBLE);
-//            mDisconnectButton.setVisibility(View.GONE);
-        } else if (appState == MmfAppState.APP_NOT_INSTALLED || appState == MmfAppState.NOT_RECORDING) {
+            mStartButton.setVisibility(View.VISIBLE);
+            mStartButton.setEnabled(false);
+            mPauseButton.setVisibility(View.GONE);
+            mResumeButton.setVisibility(View.GONE);
+            mStopButton.setVisibility(View.GONE);
+            mDiscardButton.setVisibility(View.GONE);
+            mSaveButton.setVisibility(View.GONE);
+            mConnectButton.setVisibility(View.VISIBLE);
+            mDisconnectButton.setVisibility(View.GONE);
+        } else if (state == MmfAppState.APP_NOT_INSTALLED || state == MmfAppState.NOT_RECORDING) {
+            Log.e(TAG, "++ onUpdateUiEvent() ++ state first");
             clearValues();
-//            mStartButton.setVisibility(View.VISIBLE);
-//            mStartButton.setEnabled(true);
-//            mPauseButton.setVisibility(View.GONE);
-//            mResumeButton.setVisibility(View.GONE);
-//            mStopButton.setVisibility(View.GONE);
-//            mDiscardButton.setVisibility(View.GONE);
-//            mSaveButton.setVisibility(View.GONE);
-//            mConnectButton.setVisibility(View.GONE);
-//            mDisconnectButton.setVisibility(View.VISIBLE);
-        } //else if (appState == MmfAppState.RECORDING) {
-//            mStartButton.setVisibility(View.GONE);
-//            mPauseButton.setVisibility(View.VISIBLE);
-//            mResumeButton.setVisibility(View.GONE);
-//            mStopButton.setVisibility(View.GONE);
-//            mDiscardButton.setVisibility(View.GONE);
-//            mSaveButton.setVisibility(View.GONE);
-//            mConnectButton.setVisibility(View.GONE);
-//            mDisconnectButton.setVisibility(View.VISIBLE);
-//        } else if (appState == MmfAppState.RECORDING_PAUSED) {
-//            mStartButton.setVisibility(View.GONE);
-//            mPauseButton.setVisibility(View.GONE);
-//            mResumeButton.setVisibility(View.VISIBLE);
-//            mStopButton.setVisibility(View.VISIBLE);
-//            mDiscardButton.setVisibility(View.GONE);
-//            mSaveButton.setVisibility(View.GONE);
-//            mConnectButton.setVisibility(View.GONE);
-//            mDisconnectButton.setVisibility(View.VISIBLE);
-//        } else if (appState == MmfAppState.POST_RECORDING) {
-//            mStartButton.setVisibility(View.GONE);
-//            mPauseButton.setVisibility(View.GONE);
-//            mResumeButton.setVisibility(View.GONE);
-//            mStopButton.setVisibility(View.GONE);
-//            mDiscardButton.setVisibility(View.VISIBLE);
-//            mSaveButton.setVisibility(View.VISIBLE);
-//            mConnectButton.setVisibility(View.GONE);
-//            mDisconnectButton.setVisibility(View.VISIBLE);
-//        }
+            mStartButton.setVisibility(View.VISIBLE);
+            mStartButton.setEnabled(true);
+            mPauseButton.setVisibility(View.GONE);
+            mResumeButton.setVisibility(View.GONE);
+            mStopButton.setVisibility(View.GONE);
+            mDiscardButton.setVisibility(View.GONE);
+            mSaveButton.setVisibility(View.GONE);
+            mConnectButton.setVisibility(View.GONE);
+            mDisconnectButton.setVisibility(View.VISIBLE);
+        } else if (state == MmfAppState.RECORDING) {
+            Log.e(TAG, "++ onUpdateUiEvent() ++ state second");
+            mStartButton.setVisibility(View.GONE);
+            mPauseButton.setVisibility(View.VISIBLE);
+            mResumeButton.setVisibility(View.GONE);
+            mStopButton.setVisibility(View.GONE);
+            mDiscardButton.setVisibility(View.GONE);
+            mSaveButton.setVisibility(View.GONE);
+            mConnectButton.setVisibility(View.GONE);
+            mDisconnectButton.setVisibility(View.VISIBLE);
+        } else if (state == MmfAppState.RECORDING_PAUSED) {
+            Log.e(TAG, "++ onUpdateUiEvent() ++ state third");
+            mStartButton.setVisibility(View.GONE);
+            mPauseButton.setVisibility(View.GONE);
+            mResumeButton.setVisibility(View.VISIBLE);
+            mStopButton.setVisibility(View.VISIBLE);
+            mDiscardButton.setVisibility(View.GONE);
+            mSaveButton.setVisibility(View.GONE);
+            mConnectButton.setVisibility(View.GONE);
+            mDisconnectButton.setVisibility(View.VISIBLE);
+        } else if (state == MmfAppState.POST_RECORDING) {
+            Log.e(TAG, "++ onUpdateUiEvent() ++ state fourth");
+            mStartButton.setVisibility(View.GONE);
+            mPauseButton.setVisibility(View.GONE);
+            mResumeButton.setVisibility(View.GONE);
+            mStopButton.setVisibility(View.GONE);
+            mDiscardButton.setVisibility(View.VISIBLE);
+            mSaveButton.setVisibility(View.VISIBLE);
+            mConnectButton.setVisibility(View.GONE);
+            mDisconnectButton.setVisibility(View.VISIBLE);
+        }
     }
 
     private void clearValues() {
-        MmfStatsCache.getInstance().zeroOutValues();
+        mMmfStatsCache.zeroOutValues();
 
         mCaloriesValue.setText(getString(R.string.dash));
         mDistanceValue.setText(getString(R.string.dash));
@@ -275,55 +370,111 @@ public class MainActivity extends ActionBarActivity {
         mPowerMaxValue.setText(getString(R.string.dash));
     }
 
-    @Subscribe
-    public void onHeartRateEvent(HeartRateEvent event) {
-        Log.e(TAG, "++ onHeartRateEvent()++");
-        mHeartRateValue.setText(event.getHeartRate().toString());
-        mHeartRateAvgValue.setText(event.getHeartRateAverage().toString());
-        mHeartRateMaxValue.setText(event.getHeartRateMax().toString());
-        mHeartRateZoneValue.setText(event.getHeartRateZone().toString());
+    @Override
+    public void onAppStateEvent(MmfAppState appState) {
+//        Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
+//        Toast.makeText(this, "App state = " + appState, Toast.LENGTH_LONG);
+        updateUi(appState);
     }
 
-    @Subscribe
-    public void onCalorieEvent(CalorieEvent event) {
-        Log.e(TAG, "++ onCalorieEvent()++");
-        mCaloriesValue.setText(event.getCalories().toString());
+    @Override
+    public void onAppConfiguredEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
+        //Toast.makeText(this, "App configured", Toast.LENGTH_LONG);
     }
 
-    @Subscribe
-    public void onDistanceEvent(DistanceEvent event) {
-        Log.e(TAG, "++ onDistanceEvent()++");
-        mDistanceValue.setText(event.getDistance().toString());
+    @Override
+    public void onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
+        Toast.makeText(this, "Workout started", Toast.LENGTH_LONG);
+        //EventBus.getInstance().post(new UpdateUiEvent(MmfAppState.RECORDING));
     }
 
-    @Subscribe
-    public void onDurationEvent(DurationEvent event) {
-        Log.e(TAG, "++ onDurationEvent()++");
-        mDurationValue.setText(event.getDuration().toString());
+    @Override
+    public void onPauseWorkoutEvent() {
+        //Toast.makeText(this, "Workout paused", Toast.LENGTH_LONG);
+        updateUi(MmfAppState.RECORDING_PAUSED);
     }
 
-    @Subscribe
-     public void onSpeedEvent(SpeedEvent event) {
-//        Log.e(TAG, "++ onSpeedEvent()++");
-        mSpeedValue.setText(event.getSpeed().toString());
-        mSpeedAvgValue.setText(event.getSpeedAverage().toString());
-        mSpeedMaxValue.setText(event.getSpeedMax().toString());
+    @Override
+    public void onResumeWorkoutEvent() {
+        //Toast.makeText(this, "Workout Resumed", Toast.LENGTH_LONG);
+        updateUi(MmfAppState.RECORDING);
     }
 
-    @Subscribe
-    public void onCadenceEvent(CadenceEvent event) {
-//        Log.e(TAG, "++ onSpeedEvent()++");
-        mCadenceValue.setText(event.getCadence().toString());
-        mCadenceAvgValue.setText(event.getCadenceAverage().toString());
-        mCadenceMaxValue.setText(event.getCadenceMax().toString());
+    @Override
+    public void onStopWorkoutEvent() {
+//        Toast.makeText(this, "Workout stopped", Toast.LENGTH_LONG);
+        updateUi(MmfAppState.POST_RECORDING);
     }
 
-    @Subscribe
-    public void onPowerEvent(PowerEvent event) {
-//        Log.e(TAG, "++ onSpeedEvent()++");
-        mPowerValue.setText(event.getPower().toString());
-        mPowerAvgValue.setText(event.getPowerAverage().toString());
-        mPowerMaxValue.setText(event.getPowerMax().toString());
+    @Override
+    public void onSaveWorkoutEvent() {
+//        Toast.makeText(this, "Workout saved", Toast.LENGTH_LONG);
+        updateUi(MmfAppState.NOT_RECORDING);
+    }
+
+    @Override
+    public void onDiscardWorkoutEvent() {
+//        Toast.makeText(this, "Workout discarded", Toast.LENGTH_LONG);
+        updateUi(MmfAppState.NOT_RECORDING);
+    }
+
+    @Override
+    public void onGpsStatusWarning(MmfGpsStatus gpsStatus) {
+
+    }
+
+    @Override
+    public void onLocationServicesStatusEvent() {
+
+    }
+
+    @Override
+    public void onForceUpgrade(Integer minSdkVersion) {
+
+    }
+
+    @Override
+    public void onHeartRateEvent(Integer heartRate, Integer heartRateAvg, Integer heartRateMax, Integer heartRateZone) {
+        mHeartRateValue.setText(heartRate.toString());
+        mHeartRateAvgValue.setText(heartRateAvg.toString());
+        mHeartRateMaxValue.setText(heartRateMax.toString());
+        mHeartRateZoneValue.setText(heartRateZone.toString());
+    }
+
+    @Override
+    public void onCadenceEvent(Integer cadence, Integer cadenceAvg, Integer cadenceMax) {
+        mCadenceValue.setText(cadence.toString());
+        mCadenceAvgValue.setText(cadenceAvg.toString());
+        mCadenceMaxValue.setText(cadenceMax.toString());
+    }
+
+    @Override
+    public void onCalorieEvent(Integer calories) {
+        mCaloriesValue.setText(calories.toString());
+    }
+
+    @Override
+    public void onDistanceEvent(Double distance) {
+        mDistanceValue.setText(distance.toString());
+    }
+
+    @Override
+    public void onDurationEvent(Long duration) {
+        mDurationValue.setText(duration.toString());
+    }
+
+    @Override
+    public void onSpeedEvent(Double speed, Double speedAvg, Double speedMax) {
+        mSpeedValue.setText(speed.toString());
+        mSpeedAvgValue.setText(speedAvg.toString());
+        mSpeedMaxValue.setText(speedMax.toString());
+    }
+
+    @Override
+    public void onPowerEvent(Integer power, Integer powerAvg, Integer powerMax) {
+        mPowerValue.setText(power.toString());
+        mPowerAvgValue.setText(powerAvg.toString());
+        mPowerMaxValue.setText(powerMax.toString());
     }
 
 }

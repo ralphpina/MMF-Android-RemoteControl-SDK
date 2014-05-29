@@ -13,7 +13,9 @@ import android.os.RemoteException;
 import android.util.Log;
 
 /**
- * Created by ralph.pina on 5/27/14.
+ * This class takes care of all the communication between the MMF apps and this SDK.
+ * It uses string and int constants to bind and pass information to the RemoteControllerService
+ * in the MMF apps.
  */
 public class MmfRemoteCommunication {
 
@@ -62,9 +64,9 @@ public class MmfRemoteCommunication {
     private static final String COMMAND_STOP = "stop";
     private static final String COMMAND_DISCARD = "discard";
     private static final String COMMAND_SAVE = "save";
-    private static final String COMMAND_CANCEL_WORKOUT_START = "cancel_workout_start";
-    private static final String COMMAND_START_WITHOUT_GPS = "start_without_gps";
     private static final String COMMAND_FORCE_UPGRADE = "force_upgrade";
+    private static final String PHONE_REQUIRED_MINIMUM_VERSION = "phone_required_minimum_version";
+    private static final String COMMAND_CHECK_PHONE_VERSION = "check_phone_version";
 
     // configuration options to initialize Gear ui
     // these strings are mirrored in the Gear apk
@@ -78,11 +80,11 @@ public class MmfRemoteCommunication {
     private static final String GPS_LOC_SERVICES = "gps_loc_services";
     private static final String GPS_NON_TRACKABLE = "gps_non_trackable";
 
-    private static final String COMMAND_FROM_REMOTE = "command_from_remote";
     private static final String COMMAND_FROM_MMF_APP = "command_from_mmf_app";
 
-    // TODO add to phone side R.Pina 20140527
+    private static final String PHONE_VERSION_NUMBER = "phone_version_number";
     private static final String REMOTE_COMMAND_VERSION_NUMBER = "remote_command_version_number";
+    private static final String REMOTE_CONTROL_REQUIRED_MINIMUM_VERSION = "remote_control_required_minimum_version";
 
     // used to send command and data from Gear Provider apps to our Android apps
     // this is also being used in the Android app
@@ -98,6 +100,10 @@ public class MmfRemoteCommunication {
     private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_START_WITHOUT_GPS = 10;
     private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_CANCEL_WORKOUT_START = 11;
     private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_CHECK_VERSION = 12;
+    private static final int REMOTE_CONTROLLER_CLIENT_FORCE_UPGRADE = 13;
+
+    protected final static int REMOTE_CONTROL_SDK_VERSION_NUMBER = 1000000; //xx.xxx.xxx <- rest are major , next 2 xx are minor, last 3 xxx are patch
+    private final static int MINIMUM_PHONE_VERSION_NUMBER = 3000000;
 
     /** Messenger for communicating with service. */
     private Messenger mService = null;
@@ -114,18 +120,17 @@ public class MmfRemoteCommunication {
     private MmfStatsCache mMmfStatsCache;
 
     protected MmfRemoteCommunication() {
-        mMmfStatsCache = mMmfStatsCache.getInstance();
     }
 
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
     /**
      * Check if the service is bound
      */
-    public boolean isBound() {
+    protected boolean isBound() {
         return mIsBound;
     }
 
@@ -136,7 +141,6 @@ public class MmfRemoteCommunication {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             Log.e(TAG, "++ onServiceConnected ++");
-            //if (service  != null) {
             // This is called when the connection with the service has been
             // established, giving us the service object we can use to
             // interact with the service.  We are communicating with our
@@ -155,7 +159,6 @@ public class MmfRemoteCommunication {
             } catch (RemoteException e) {
                 Log.e(TAG, e.getMessage(), e);
             }
-            //}
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -166,8 +169,8 @@ public class MmfRemoteCommunication {
         }
     };
 
-    public boolean onConnectionEstablished(Context context, String intentFilterAction) {
-        Log.e(TAG, "++ onConnectionEstablished ++");
+    protected boolean onConnectionTried(Context context, String intentFilterAction) {
+//        Log.e(TAG, "++ onConnectionTried ++");
         boolean success = false;
         if (!mIsBound) {
             success = context.bindService(new Intent(intentFilterAction), mConnection, context.BIND_AUTO_CREATE);
@@ -176,8 +179,8 @@ public class MmfRemoteCommunication {
         return success;
     }
 
-    public void onConnectionClosed(Context context) {
-        Log.e(TAG, "++ onConnectionClosed ++");
+    protected void onConnectionClosed(Context context) {
+//        Log.e(TAG, "++ onConnectionClosed ++");
         if (mIsBound) {
             // If we have received the service, and hence registered with
             // it, then now is the time to unregister.
@@ -199,122 +202,206 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void setDataListener(MmfRemoteDataListener mmfRemoteDataListener) {
-        Log.e(TAG, "++ setDataListener ++");
+    /**
+     * Callback method to send stats back to the SDK
+     * @param mmfRemoteDataListener
+     */
+    protected void setDataListener(MmfRemoteDataListener mmfRemoteDataListener) {
+//        Log.e(TAG, "++ setDataListener ++");
         mMmfRemoteDataListener = mmfRemoteDataListener;
     }
 
-    public void setCommandListener(MmfRemoteCommandListener mmfRemoteCommandListener) {
-        Log.e(TAG, "++ setCommandListener ++");
+    /**
+     * Callback method to send commands back to the SDK
+     * @param mmfRemoteCommandListener
+     */
+    protected void setCommandListener(MmfRemoteCommandListener mmfRemoteCommandListener) {
+//        Log.e(TAG, "++ setCommandListener ++");
         mMmfRemoteCommandListener = mmfRemoteCommandListener;
     }
 
-    public void startCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ startCommand() ++");
+    protected MmfRemoteDataListener getDataListener() {
+        return mMmfRemoteDataListener;
+    }
+
+    protected MmfRemoteCommandListener getCommandListener() {
+        return mMmfRemoteCommandListener;
+    }
+
+    protected void setStatsCache(MmfStatsCache statsCache) {
+        mMmfStatsCache = statsCache;
+    }
+
+    protected MmfStatsCache getStatsCache() {
+        return mMmfStatsCache;
+    }
+
+    /**
+     * Send start command to RemoteControllerService in MMF apps
+     */
+    protected void startCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ startCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_START));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void pauseCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ pauseCommand() ++");
+    /**
+     * Send pause command to RemoteControllerService in MMF apps
+     */
+    protected void pauseCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ pauseCommand() ++");
         try {
-            // TODO add appdisconnect exception
-//            if (mService == null) {
-//                throw new AppDisconnectedException("Service to app closed");
-//            }
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_PAUSE));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void resumeCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ resumeCommand() ++");
+    /**
+     * Send resume command to RemoteControllerService in MMF apps
+     */
+    protected void resumeCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ resumeCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_RESUME));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);;
         }
     }
 
-    public void stopCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ stopCommand() ++");
+    /**
+     * Send stop command to RemoteControllerService in MMF apps
+     */
+    protected void stopCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ stopCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_STOP));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void discardCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ discardCommand() ++");
+    /**
+     * Send discard command to RemoteControllerService in MMF apps
+     */
+    protected void discardCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ discardCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_DISCARD));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void saveCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ saveCommand() ++");
+    /**
+     * Send save command to RemoteControllerService in MMF apps
+     */
+    protected void saveCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ saveCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_SAVE));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void getCurrentStateCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ getCurrentState() ++");
+    /**
+     * Ask the RemoteControllerService in MMF apps what the state of the app is.
+     * These are listed in the {@link MmfAppState} enum.
+     */
+    protected void getCurrentStateCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ getCurrentState() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_CURRENT_STATE));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void startWithoutGpsCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ startWithoutGpsCommand() ++");
+    /**
+     * Send start command whether or not we have GPS to RemoteControllerService in MMF apps
+     */
+    protected void startWithoutGpsCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ startWithoutGpsCommand() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_START_WITHOUT_GPS));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void cancelWorkoutStartCommand() {
-        Log.d(TAG, "MmfRemoteCommunication ++ cancelWorkoutStartCommand() ++");
+    /**
+     * Tell the RemoteControllerService in MMF apps to cancel a start that it had
+     * on hold because of the lack of GPS.
+     */
+    protected void cancelWorkoutStartCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ cancelWorkoutStart() ++");
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_CANCEL_WORKOUT_START));
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
-    public void sendVersionNumber(String version) {
-        Log.d(TAG, "MmfRemoteCommunication ++ sendVersionNumber() ++");
+    /**
+     * Tell the MMF app that it needs a higher minimum version to work properly with
+     * this SDK.
+     */
+    protected void sendForceUpgradeCommand() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ sendForceUpgradeCommand() ++");
+        try {
+            Message msg = new Message();
+            msg.what = REMOTE_CONTROLLER_CLIENT_FORCE_UPGRADE;
+            Bundle data = new Bundle();
+            data.putInt(PHONE_REQUIRED_MINIMUM_VERSION, MINIMUM_PHONE_VERSION_NUMBER);
+            msg.setData(data);
+            mService.send(msg);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send the version number of this SDK to the MMF app to make sure it meets
+     * the minimum requirement.
+     */
+    protected void sendVersionNumber() {
+//        Log.d(TAG, "MmfRemoteCommunication ++ sendVersionNumber() ++");
         try {
             Message msg = new Message();
             msg.what = REMOTE_CONTROLLER_CLIENT_COMMAND_CHECK_VERSION;
             Bundle data = new Bundle();
-            data.putString(REMOTE_COMMAND_VERSION_NUMBER, version);
+            data.putInt(REMOTE_COMMAND_VERSION_NUMBER, REMOTE_CONTROL_SDK_VERSION_NUMBER);
             msg.setData(data);
             mService.send(msg);
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
+    }
+
+    /**
+     * Checks the version of the MMF phone app to make sure it meets the minimum.
+     * At this point it sends our version for the phone to check.
+     *
+     * @param version of the phone app
+     */
+    private void checkVersionAndTriggerWarning(int version) {
+        if (version < MINIMUM_PHONE_VERSION_NUMBER) {
+            sendForceUpgradeCommand();
+        }
+        sendVersionNumber();
     }
 
     /**
@@ -323,7 +410,7 @@ public class MmfRemoteCommunication {
     private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            Log.e(TAG, "++ handleMessage ++");
+//            Log.e(TAG, "++ handleMessage ++");
             Bundle data = msg.getData();
 
             if (data.containsKey(DURATION)) {
@@ -356,6 +443,14 @@ public class MmfRemoteCommunication {
             }
 
             if (data.containsKey(COMMAND_FROM_MMF_APP)) {
+
+                if (data.containsKey(COMMAND_FORCE_UPGRADE)) {
+                    onPhoneForceUpgradeEvent(data.getInt(REMOTE_CONTROL_REQUIRED_MINIMUM_VERSION));
+                }
+
+                if (data.containsKey(COMMAND_CHECK_PHONE_VERSION)) {
+                    checkVersionAndTriggerWarning(data.getInt(PHONE_VERSION_NUMBER));
+                }
 
                 if (data.getString(COMMAND_FROM_MMF_APP).equals(COMMAND_START)) {
 
@@ -432,32 +527,41 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void onPhoneTimeEvent(Long duration) {
-        Log.e(TAG, "++ onPhoneTimeEvent ++");
+    private void onPhoneForceUpgradeEvent(Integer minSdkVersion) {
+//        Log.e(TAG, "++ onPhoneTimeEvent ++");
+        if (mMmfRemoteCommandListener != null) {
+            if (REMOTE_CONTROL_SDK_VERSION_NUMBER < minSdkVersion) {
+                mMmfRemoteCommandListener.onForceUpgrade(minSdkVersion);
+            }
+        }
+    }
+
+    private void onPhoneTimeEvent(Long duration) {
+//        Log.e(TAG, "++ onPhoneTimeEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setDuration(duration);
             mMmfRemoteDataListener.onDurationEvent(duration);
         }
     }
 
-    public void onPhoneSendCaloriesEvent(Integer calories) {
-        Log.e(TAG, "++ onPhoneSendCaloriesEvent ++");
+    private void onPhoneSendCaloriesEvent(Integer calories) {
+//        Log.e(TAG, "++ onPhoneSendCaloriesEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setCalories(calories);
             mMmfRemoteDataListener.onCalorieEvent(calories);
         }
     }
 
-    public void onPhoneSendDistanceEvent(Double distance) {
-        Log.e(TAG, "++ onPhoneSendDistanceEvent ++");
+    private void onPhoneSendDistanceEvent(Double distance) {
+//        Log.e(TAG, "++ onPhoneSendDistanceEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setDistance(distance);
             mMmfRemoteDataListener.onDistanceEvent(distance);
         }
     }
 
-    public void onPhoneSendSpeedEvent(Double speed, Double avgSpeed, Double maxSpeed) {
-        Log.e(TAG, "++ onPhoneSendSpeedEvent ++");
+    private void onPhoneSendSpeedEvent(Double speed, Double avgSpeed, Double maxSpeed) {
+//        Log.e(TAG, "++ onPhoneSendSpeedEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setSpeed(speed);
             mMmfStatsCache.setAverageSpeed(avgSpeed);
@@ -466,8 +570,8 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void onPhoneSendCadenceEvent(Integer cadence, Integer averageCadence, Integer maxCadence) {
-        Log.e(TAG, "++ onPhoneSendCadenceEvent ++");
+    private void onPhoneSendCadenceEvent(Integer cadence, Integer averageCadence, Integer maxCadence) {
+//        Log.e(TAG, "++ onPhoneSendCadenceEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setCadence(cadence);
             mMmfStatsCache.setAverageCadence(averageCadence);
@@ -476,8 +580,8 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void onPhoneSendPowerEvent(Integer power, Integer averagePower, Integer maxPower) {
-        Log.e(TAG, "++ onPhoneSendPowerEvent ++");
+    private void onPhoneSendPowerEvent(Integer power, Integer averagePower, Integer maxPower) {
+//        Log.e(TAG, "++ onPhoneSendPowerEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setPower(power);
             mMmfStatsCache.setAveragePower(averagePower);
@@ -486,8 +590,8 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void onPhoneSendHeartRateEvent(Integer heartRate, Integer heartRateAvg, Integer heartRateMax, Integer heartRateZone) {
-        Log.e(TAG, "++ onPhoneSendHeartRateEvent ++");
+    private void onPhoneSendHeartRateEvent(Integer heartRate, Integer heartRateAvg, Integer heartRateMax, Integer heartRateZone) {
+//        Log.e(TAG, "++ onPhoneSendHeartRateEvent ++");
         if (mMmfRemoteDataListener != null) {
             mMmfStatsCache.setHeartRate(heartRate);
             mMmfStatsCache.setAverageHeartRate(heartRateAvg);
@@ -497,64 +601,63 @@ public class MmfRemoteCommunication {
         }
     }
 
-    public void onSendToRemoteStartEvent(Boolean isMetric,
+    private void onSendToRemoteStartEvent(Boolean isMetric,
                                          Boolean hasCalories,
                                          Boolean hasHeartRate,
                                          Boolean isSpeed) {
-        Log.e(TAG, "++ onSendToRemoteStartEvent ++");
+//        Log.e(TAG, "++ onSendToRemoteStartEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onStartWorkoutEvent(isMetric, hasHeartRate, hasCalories, isSpeed);
         }
     }
 
-    public void onPhoneSendConfigurationEvent(Boolean isMetric,
+    private void onPhoneSendConfigurationEvent(Boolean isMetric,
                                               Boolean hasCalories,
                                               Boolean hasHeartRate,
                                               Boolean isSpeed) {
-        Log.e(TAG, "++ onPhoneSendConfigurationEvent ++");
+//        Log.e(TAG, "++ onPhoneSendConfigurationEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onAppConfiguredEvent(isMetric, hasHeartRate, hasCalories, isSpeed);
         }
     }
 
-    public void onSendToRemotePauseEvent() {
-        Log.e(TAG, "++ onSendToRemotePauseEvent ++");
+    private void onSendToRemotePauseEvent() {
+//        Log.e(TAG, "++ onSendToRemotePauseEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onPauseWorkoutEvent();
         }
     }
 
-    public void onSendToRemoteResumeEvent() {
-        Log.e(TAG, "++ onSendToRemoteResumeEvent ++");
+    private void onSendToRemoteResumeEvent() {
+//        Log.e(TAG, "++ onSendToRemoteResumeEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onResumeWorkoutEvent();
         }
     }
 
-    public void onSendToRemoteStopEvent() {
-        Log.e(TAG, "++ onSendToRemoteStopEvent ++");
+    private void onSendToRemoteStopEvent() {
+//        Log.e(TAG, "++ onSendToRemoteStopEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onStopWorkoutEvent();
         }
     }
 
-    public void onSendToRemoteDiscardEvent() {
-        Log.e(TAG, "++ onSendToRemoteDiscardEvent ++");
+    private void onSendToRemoteDiscardEvent() {
+//        Log.e(TAG, "++ onSendToRemoteDiscardEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onDiscardWorkoutEvent();
         }
     }
 
-    public void onSendToRemoteSaveEvent() {
-        Log.e(TAG, "++ onSendToRemoteSaveEvent ++");
+    private void onSendToRemoteSaveEvent() {
+//        Log.e(TAG, "++ onSendToRemoteSaveEvent ++");
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onSaveWorkoutEvent();
         }
     }
 
-    // TODO need to add APP_NOT_INSTALLED R.Pina 20140528
-    public void onSendToRemoteAppStateEvent(String currentState) {
-        Log.e(TAG, "++ onSendToRemoteAppStateEvent ++ currentState = " + currentState);
+    private void onSendToRemoteAppStateEvent(String currentState) {
+//        Log.e(TAG, "++ onSendToRemoteAppStateEvent ++ currentState = " + currentState);
         MmfAppState appState = MmfAppState.NOT_RECORDING;
         if (currentState.equals(NOT_LOGGED_IN)) {
             appState = MmfAppState.NOT_LOGGED_IN;
@@ -571,7 +674,7 @@ public class MmfRemoteCommunication {
         if (currentState.equals(POST_RECORDING)) {
             appState = MmfAppState.POST_RECORDING;
         }
-        MmfStatsCache.getInstance().setMmfAppState(appState);
+
         if (mMmfRemoteCommandListener != null) {
             mMmfRemoteCommandListener.onAppStateEvent(appState);
         }
