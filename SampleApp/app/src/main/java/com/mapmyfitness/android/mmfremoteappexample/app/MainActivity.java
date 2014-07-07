@@ -9,10 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.mapmyfitness.android.mmfremote.AppInfo;
-import com.mapmyfitness.android.mmfremote.AppPackage;
 import com.mapmyfitness.android.mmfremote.AppState;
 import com.mapmyfitness.android.mmfremote.GpsStatus;
 import com.mapmyfitness.android.mmfremote.RemoteCommandListener;
@@ -31,6 +29,7 @@ import butterknife.OnClick;
 public class MainActivity extends ActionBarActivity implements RemoteDataListener, RemoteCommandListener, AdapterView.OnItemSelectedListener {
 
     private static final String TAG = "MainActivity";
+    private boolean mDetailLog = true;
 
     @InjectView(R.id.appStateValue)
     TextView mAppStateValue;
@@ -135,7 +134,9 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.e(TAG, "++ onCreate()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ onCreate()++");
+        }
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
 
@@ -146,7 +147,7 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
         remoteControlBuilder.setStatsCache(mStatsCache);
         remoteControlBuilder.setDataListener(this);
         remoteControlBuilder.setCommandListener(this);
-        remoteControlBuilder.setAppPackage(AppPackage.MAPMYRUN);
+        //remoteControlBuilder.setAppPackage(AppPackage.MAPMYRUN);
 
         try {
             mRemoteManager = remoteControlBuilder.build();
@@ -159,24 +160,24 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
         ArrayAdapter<AppInfo> adapter = new ArrayAdapter<AppInfo>(this, android.R.layout.simple_spinner_item, appPackages);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mAppsSpinner.setAdapter(adapter);
+        mAppsSpinner.setOnItemSelectedListener(this);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.e(TAG, "++ onResume()++");
-        if (!mRemoteManager.isAppConnected()) {
-            updateUi(AppState.APP_NOT_CONNECTED);
-            connectApp();
-        } else {
-            mRemoteManager.requestAppState();
+        if (mDetailLog) {
+            Log.e(TAG, "++ onResume()++");
         }
+        mRemoteManager.requestAppState();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.e(TAG, "++ onPause()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ onPause()++");
+        }
     }
 
     @Override
@@ -191,8 +192,10 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
     @Override
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {
-        // An item was selected. You can retrieve the selected item using
-        // parent.getItemAtPosition(pos)
+        if (mDetailLog) {
+            Log.e(TAG, "++ onItemSelected ((AppInfo)parent.getItemAtPosition(pos)).getPackage() = " + ((AppInfo)parent.getItemAtPosition(pos)).getPackage());
+        }
+        mRemoteManager.setAppPackage(((AppInfo)parent.getItemAtPosition(pos)).getPackage());
     }
 
     // for spinner
@@ -202,94 +205,127 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
     }
 
     @OnClick(R.id.startButton) void start() {
-//        Log.e(TAG, "++ start()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ start()++");
+        }
         try {
             mRemoteManager.startWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ start()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.pauseButton) void pause() {
-//        Log.e(TAG, "++ pause()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ pause()++");
+        }
         try {
             mRemoteManager.pauseWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ pause()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.resumeButton) void resume() {
-//        Log.e(TAG, "++ resume()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ resume()++");
+        }
         try {
             mRemoteManager.resumeWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ resume()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.stopButton) void stop() {
-//        Log.e(TAG, "++ stop()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ stop()++");
+        }
         try {
             mRemoteManager.stopWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ stop()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.discardButton) void discard() {
-//        Log.e(TAG, "++ discard()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ discard()++");
+        }
         try {
             mRemoteManager.discardWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ discard()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.saveButton) void save() {
-//        Log.e(TAG, "++ save()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ save()++");
+        }
         try {
             mRemoteManager.saveWorkoutCommand();
         } catch (RemoteException e) {
             if (e.getCode() == RemoteException.Code.APP_NOT_CONNECTED) {
                 // Do something on the UI
-                connectApp();
+                Log.e(TAG, "++ save()++ App not connected!");
+                //connectApp();
             }
         }
     }
 
     @OnClick(R.id.connectButton) void connect() {
-//        Log.e(TAG, "++ connect()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ connect()++");
+        }
         connectApp();
     }
 
     @OnClick(R.id.disconnectButton) void disconnect() {
-//        Log.e(TAG, "++ disconnect()++");
+        if (mDetailLog) {
+            Log.e(TAG, "++ disconnect()++");
+        }
         mRemoteManager.disconnectFromMmfApp();
     }
 
     private void connectApp() {
+        if (mDetailLog) {
+            Log.e(TAG, "++ connectApp()++");
+        }
+        if (mRemoteManager.getAppPackage() == null) {
+            mRemoteManager.setAppPackage(((AppInfo) mAppsSpinner.getSelectedItem()).getPackage());
+        }
         boolean connected = mRemoteManager.tryToConnectToMmfApp();
-        Toast.makeText(this, "Connection was successful = " + connected, Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ connectApp() ++ Connection was successful = " + connected + " to " + mRemoteManager.getAppPackage().toString());
+        }
+        //Toast.makeText(this, "Connection was successful = " + connected + " to " + mRemoteManager.getAppPackage().toString(), Toast.LENGTH_LONG);
     }
 
     private void updateUi(AppState state) {
-        Log.e(TAG, "++ onUpdateUiEvent() ++ state = " + state);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onUpdateUiEvent() ++ state = " + state);
+        }
         mAppStateValue.setText(state.toString());
 
         if (state == AppState.APP_NOT_CONNECTED) {
@@ -303,8 +339,18 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
             mSaveButton.setVisibility(View.GONE);
             mConnectButton.setVisibility(View.VISIBLE);
             mDisconnectButton.setVisibility(View.GONE);
+        } else if (state == AppState.NOT_LOGGED_IN) {
+            clearValues();
+            mStartButton.setVisibility(View.VISIBLE);
+            mStartButton.setEnabled(false);
+            mPauseButton.setVisibility(View.GONE);
+            mResumeButton.setVisibility(View.GONE);
+            mStopButton.setVisibility(View.GONE);
+            mDiscardButton.setVisibility(View.GONE);
+            mSaveButton.setVisibility(View.GONE);
+            mConnectButton.setVisibility(View.GONE);
+            mDisconnectButton.setVisibility(View.VISIBLE);
         } else if (state == AppState.APP_NOT_INSTALLED || state == AppState.NOT_RECORDING) {
-            Log.e(TAG, "++ onUpdateUiEvent() ++ state first");
             clearValues();
             mStartButton.setVisibility(View.VISIBLE);
             mStartButton.setEnabled(true);
@@ -316,7 +362,6 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
         } else if (state == AppState.RECORDING) {
-            Log.e(TAG, "++ onUpdateUiEvent() ++ state second");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.VISIBLE);
             mResumeButton.setVisibility(View.GONE);
@@ -326,7 +371,6 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
         } else if (state == AppState.RECORDING_PAUSED) {
-            Log.e(TAG, "++ onUpdateUiEvent() ++ state third");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.GONE);
             mResumeButton.setVisibility(View.VISIBLE);
@@ -336,7 +380,6 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
             mConnectButton.setVisibility(View.GONE);
             mDisconnectButton.setVisibility(View.VISIBLE);
         } else if (state == AppState.POST_RECORDING) {
-            Log.e(TAG, "++ onUpdateUiEvent() ++ state fourth");
             mStartButton.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.GONE);
             mResumeButton.setVisibility(View.GONE);
@@ -349,6 +392,9 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
     }
 
     private void clearValues() {
+        if (mDetailLog) {
+            Log.e(TAG, "++ clearValues() ++");
+        }
         mStatsCache.zeroOutValues();
 
         mCaloriesValue.setText(getString(R.string.dash));
@@ -375,49 +421,65 @@ public class MainActivity extends ActionBarActivity implements RemoteDataListene
 
     @Override
     public void onAppStateEvent(AppState appState) {
-//        Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onAppStateEvent ++ App state = " + appState);
+        }
 //        Toast.makeText(this, "App state = " + appState, Toast.LENGTH_LONG);
         updateUi(appState);
     }
 
     @Override
     public void onAppConfiguredEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
-        //Toast.makeText(this, "App configured", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onAppConfiguredEvent ++");
+        }
     }
 
     @Override
     public void onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed) {
-        Toast.makeText(this, "Workout started", Toast.LENGTH_LONG);
-        //EventBus.getInstance().post(new UpdateUiEvent(AppState.RECORDING));
+        if (mDetailLog) {
+            Log.e(TAG, "++ onStartWorkoutEvent ++");
+        }
+        updateUi(AppState.RECORDING);
     }
 
     @Override
     public void onPauseWorkoutEvent() {
-        //Toast.makeText(this, "Workout paused", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onPauseWorkoutEvent ++");
+        }
         updateUi(AppState.RECORDING_PAUSED);
     }
 
     @Override
     public void onResumeWorkoutEvent() {
-        //Toast.makeText(this, "Workout Resumed", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onResumeWorkoutEvent ++");
+        }
         updateUi(AppState.RECORDING);
     }
 
     @Override
     public void onStopWorkoutEvent() {
-//        Toast.makeText(this, "Workout stopped", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onStopWorkoutEvent ++");
+        }
         updateUi(AppState.POST_RECORDING);
     }
 
     @Override
     public void onSaveWorkoutEvent() {
-//        Toast.makeText(this, "Workout saved", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onSaveWorkoutEvent ++");
+        }
         updateUi(AppState.NOT_RECORDING);
     }
 
     @Override
     public void onDiscardWorkoutEvent() {
-//        Toast.makeText(this, "Workout discarded", Toast.LENGTH_LONG);
+        if (mDetailLog) {
+            Log.e(TAG, "++ onDiscardWorkoutEvent ++");
+        }
         updateUi(AppState.NOT_RECORDING);
     }
 

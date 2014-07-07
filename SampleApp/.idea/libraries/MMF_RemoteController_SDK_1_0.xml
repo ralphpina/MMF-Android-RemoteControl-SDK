@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="MMF-RemoteController-SDK-1.0">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/app/libs/MMF-RemoteController-SDK-1.0.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

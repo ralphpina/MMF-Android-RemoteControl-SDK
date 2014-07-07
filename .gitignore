@@ -1,0 +1,7 @@
+/SampleApp/remote-control-sdk/remote-control-sdk.iml
+
+SampleApp/build/*
+
+SampleApp/build
+
+/SampleApp/SampleApp.iml
