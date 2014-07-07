@@ -38,7 +38,7 @@ public enum AppPackage {
     /**
      * Checks whether this app equals another
      *
-     * @param otherPackage the other {@link AppPackage} being compared
+     * @param otherPackage the other {@link com.mapmyfitness.android.mmfremote.AppPackage} being compared
      * @return true if they are the same app, false otherwise
      */
     public boolean equalsPackage(String otherPackage){

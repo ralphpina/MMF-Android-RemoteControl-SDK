@@ -19,8 +19,6 @@ import android.util.Log;
  */
 public class RemoteCommunication {
 
-    private static final String TAG = "MmfRemComLogger";
-
     // string to pass state to Gear app.
     // these strings are mirrored in the Gear apk
     private static final String CURRENT_STATE = "current_state";
@@ -140,7 +138,9 @@ public class RemoteCommunication {
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
-            Log.e(TAG, "++ onServiceConnected ++");
+            if (RemoteManager.DETAIL_LOG) {
+                Log.e(RemoteManager.TAG, "++ onServiceConnected ++");
+            }
             // This is called when the connection with the service has been
             // established, giving us the service object we can use to
             // interact with the service.  We are communicating with our
@@ -157,12 +157,12 @@ public class RemoteCommunication {
                 mService.send(msg);
 
             } catch (RemoteException e) {
-                Log.e(TAG, e.getMessage(), e);
+                Log.e(RemoteManager.TAG, e.getMessage(), e);
             }
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            Log.e(TAG, "++ onServiceDisconnected ++");
+            Log.e(RemoteManager.TAG, "++ onServiceDisconnected ++");
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
@@ -170,7 +170,9 @@ public class RemoteCommunication {
     };
 
     protected boolean onConnectionTried(Context context, String intentFilterAction) {
-//        Log.e(TAG, "++ onConnectionTried ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onConnectionTried ++");
+        }
         boolean success = false;
         if (!mIsBound) {
             success = context.bindService(new Intent(intentFilterAction), mConnection, context.BIND_AUTO_CREATE);
@@ -180,7 +182,9 @@ public class RemoteCommunication {
     }
 
     protected void onConnectionClosed(Context context) {
-//        Log.e(TAG, "++ onConnectionClosed ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onConnectionClosed ++");
+        }
         if (mIsBound) {
             // If we have received the service, and hence registered with
             // it, then now is the time to unregister.
@@ -207,7 +211,9 @@ public class RemoteCommunication {
      * @param remoteDataListener
      */
     protected void setDataListener(RemoteDataListener remoteDataListener) {
-//        Log.e(TAG, "++ setDataListener ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ setDataListener ++");
+        }
         mRemoteDataListener = remoteDataListener;
     }
 
@@ -216,7 +222,9 @@ public class RemoteCommunication {
      * @param remoteCommandListener
      */
     protected void setCommandListener(RemoteCommandListener remoteCommandListener) {
-//        Log.e(TAG, "++ setCommandListener ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ setCommandListener ++");
+        }
         mRemoteCommandListener = remoteCommandListener;
     }
 
@@ -240,12 +248,14 @@ public class RemoteCommunication {
      * Send start command to RemoteControllerService in MMF apps
      */
     protected void startCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ startCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ startCommand() ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_START));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -253,12 +263,14 @@ public class RemoteCommunication {
      * Send pause command to RemoteControllerService in MMF apps
      */
     protected void pauseCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ pauseCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ pauseCommand() ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_PAUSE));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -266,12 +278,14 @@ public class RemoteCommunication {
      * Send resume command to RemoteControllerService in MMF apps
      */
     protected void resumeCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ resumeCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ resumeCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_RESUME));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);;
+            Log.e(RemoteManager.TAG, e.getMessage(), e);;
         }
     }
 
@@ -279,12 +293,14 @@ public class RemoteCommunication {
      * Send stop command to RemoteControllerService in MMF apps
      */
     protected void stopCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ stopCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ stopCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_STOP));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -292,12 +308,14 @@ public class RemoteCommunication {
      * Send discard command to RemoteControllerService in MMF apps
      */
     protected void discardCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ discardCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ discardCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_DISCARD));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -305,26 +323,30 @@ public class RemoteCommunication {
      * Send save command to RemoteControllerService in MMF apps
      */
     protected void saveCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ saveCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ saveCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_SAVE));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
     /**
      * Ask the RemoteControllerService in MMF apps what the state of the app is.
-     * These are listed in the {@link AppState} enum.
+     * These are listed in the {@link com.mapmyfitness.android.mmfremote.AppState} enum.
      */
     protected void getCurrentStateCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ getCurrentState() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentStateCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_CURRENT_STATE));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -332,12 +354,14 @@ public class RemoteCommunication {
      * Send start command whether or not we have GPS to RemoteControllerService in MMF apps
      */
     protected void startWithoutGpsCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ startWithoutGpsCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ startWithoutGpsCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_START_WITHOUT_GPS));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -346,12 +370,14 @@ public class RemoteCommunication {
      * on hold because of the lack of GPS.
      */
     protected void cancelWorkoutStartCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ cancelWorkoutStart() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ cancelWorkoutStartCommand ++");
+        }
         try {
             mService.send(Message.obtain(null,
                     REMOTE_CONTROLLER_CLIENT_COMMAND_CANCEL_WORKOUT_START));
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -360,7 +386,9 @@ public class RemoteCommunication {
      * this SDK.
      */
     protected void sendForceUpgradeCommand() {
-//        Log.d(TAG, "RemoteCommunication ++ sendForceUpgradeCommand() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ sendForceUpgradeCommand ++");
+        }
         try {
             Message msg = new Message();
             msg.what = REMOTE_CONTROLLER_CLIENT_FORCE_UPGRADE;
@@ -369,7 +397,7 @@ public class RemoteCommunication {
             msg.setData(data);
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -378,7 +406,9 @@ public class RemoteCommunication {
      * the minimum requirement.
      */
     protected void sendVersionNumber() {
-//        Log.d(TAG, "RemoteCommunication ++ sendVersionNumber() ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ sendVersionNumber ++");
+        }
         try {
             Message msg = new Message();
             msg.what = REMOTE_CONTROLLER_CLIENT_COMMAND_CHECK_VERSION;
@@ -387,7 +417,7 @@ public class RemoteCommunication {
             msg.setData(data);
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
     }
 
@@ -410,7 +440,6 @@ public class RemoteCommunication {
     private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-//            Log.e(TAG, "++ handleMessage ++");
             Bundle data = msg.getData();
 
             if (data.containsKey(DURATION)) {
@@ -528,7 +557,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneForceUpgradeEvent(Integer minSdkVersion) {
-//        Log.e(TAG, "++ onPhoneTimeEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneForceUpgradeEvent ++");
+//        }
         if (mRemoteCommandListener != null) {
             if (REMOTE_CONTROL_SDK_VERSION_NUMBER < minSdkVersion) {
                 mRemoteCommandListener.onForceUpgrade(minSdkVersion);
@@ -537,7 +568,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneTimeEvent(Long duration) {
-//        Log.e(TAG, "++ onPhoneTimeEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneTimeEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setDuration(duration);
         }
@@ -547,7 +580,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendCaloriesEvent(Integer calories) {
-//        Log.e(TAG, "++ onPhoneSendCaloriesEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendCaloriesEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setCalories(calories);
         }
@@ -557,7 +592,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendDistanceEvent(Double distance) {
-//        Log.e(TAG, "++ onPhoneSendDistanceEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendDistanceEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setDistance(distance);
         }
@@ -567,7 +604,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendSpeedEvent(Double speed, Double avgSpeed, Double maxSpeed) {
-//        Log.e(TAG, "++ onPhoneSendSpeedEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendSpeedEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setSpeed(speed);
             mStatsCache.setAverageSpeed(avgSpeed);
@@ -579,7 +618,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendCadenceEvent(Integer cadence, Integer averageCadence, Integer maxCadence) {
-//        Log.e(TAG, "++ onPhoneSendCadenceEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendCadenceEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setCadence(cadence);
             mStatsCache.setAverageCadence(averageCadence);
@@ -591,7 +632,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendPowerEvent(Integer power, Integer averagePower, Integer maxPower) {
-//        Log.e(TAG, "++ onPhoneSendPowerEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendPowerEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setPower(power);
             mStatsCache.setAveragePower(averagePower);
@@ -603,7 +646,9 @@ public class RemoteCommunication {
     }
 
     private void onPhoneSendHeartRateEvent(Integer heartRate, Integer heartRateAvg, Integer heartRateMax, Integer heartRateZone) {
-//        Log.e(TAG, "++ onPhoneSendHeartRateEvent ++");
+//        if (RemoteManager.DETAIL_LOG) {
+//            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendHeartRateEvent ++");
+//        }
         if (mStatsCache != null) {
             mStatsCache.setHeartRate(heartRate);
             mStatsCache.setAverageHeartRate(heartRateAvg);
@@ -619,7 +664,9 @@ public class RemoteCommunication {
                                          Boolean hasCalories,
                                          Boolean hasHeartRate,
                                          Boolean isSpeed) {
-//        Log.e(TAG, "++ onSendToRemoteStartEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteStartEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onStartWorkoutEvent(isMetric, hasHeartRate, hasCalories, isSpeed);
         }
@@ -629,49 +676,63 @@ public class RemoteCommunication {
                                               Boolean hasCalories,
                                               Boolean hasHeartRate,
                                               Boolean isSpeed) {
-//        Log.e(TAG, "++ onPhoneSendConfigurationEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onPhoneSendConfigurationEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onAppConfiguredEvent(isMetric, hasHeartRate, hasCalories, isSpeed);
         }
     }
 
     private void onSendToRemotePauseEvent() {
-//        Log.e(TAG, "++ onSendToRemotePauseEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemotePauseEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onPauseWorkoutEvent();
         }
     }
 
     private void onSendToRemoteResumeEvent() {
-//        Log.e(TAG, "++ onSendToRemoteResumeEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteResumeEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onResumeWorkoutEvent();
         }
     }
 
     private void onSendToRemoteStopEvent() {
-//        Log.e(TAG, "++ onSendToRemoteStopEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteStopEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onStopWorkoutEvent();
         }
     }
 
     private void onSendToRemoteDiscardEvent() {
-//        Log.e(TAG, "++ onSendToRemoteDiscardEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteDiscardEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onDiscardWorkoutEvent();
         }
     }
 
     private void onSendToRemoteSaveEvent() {
-//        Log.e(TAG, "++ onSendToRemoteSaveEvent ++");
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteSaveEvent ++");
+        }
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onSaveWorkoutEvent();
         }
     }
 
     private void onSendToRemoteAppStateEvent(String currentState) {
-//        Log.e(TAG, "++ onSendToRemoteAppStateEvent ++ currentState = " + currentState);
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ onSendToRemoteAppStateEvent ++ currentState = " + currentState);
+        }
         AppState appState = AppState.NOT_RECORDING;
         if (currentState.equals(NOT_LOGGED_IN)) {
             appState = AppState.NOT_LOGGED_IN;

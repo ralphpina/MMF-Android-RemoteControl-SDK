@@ -8,13 +8,13 @@ public interface RemoteDataListener {
     /**
      * A heart rate event with data. All units are in bpm. Receiving this data requires
      * that the user have a heart rate monitor connected to the MMF app in their Android phone.
-     * You can check if heart rate is available using the {@link RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
+     * You can check if heart rate is available using the {@link com.mapmyfitness.android.mmfremote.RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
      * listener when the app starts.
      *
      * @param heartRate the heart rate of the user in beats per minute.
      * @param averageHeartRate the heart rate of the user in beats per minute.
      * @param maxHeartRate the heart rate of the user in beats per minute.
-     * @param heartRateZone the heart rate of the user. This {@link java.lang.Integer} varies
+     * @param heartRateZone the heart rate of the user. This {@link Integer} varies
      *                      between 1 and 5. Heart rate zones are calculated using the
      *                      heart rate and the max heart rate of the user, which depends on their age.
      */
@@ -34,7 +34,7 @@ public interface RemoteDataListener {
     /**
      * Total calories burned burned so far in the workout. Units are in kcals. To calculate calories
      * the MMF apps need certain user information, which we may or may not have. Like Heart Rate, you can check
-     * if is available using the {@link RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
+     * if is available using the {@link com.mapmyfitness.android.mmfremote.RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
      * listener when the app starts.
      *
      * @param calories total calories burned so far in kcals.
@@ -57,7 +57,7 @@ public interface RemoteDataListener {
 
     /**
      * Speed of workout. Units are in meters per second. Speed can be used to calculate Pace if the
-     * user desires it. The {@link RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
+     * user desires it. The {@link com.mapmyfitness.android.mmfremote.RemoteCommandListener#onStartWorkoutEvent(Boolean, Boolean, Boolean, Boolean) onStartWorkoutEvent(Boolean metric, Boolean hasHeartRate, Boolean calculatesCalories, Boolean isSpeed)}
      * command will say whether the user has chosen to see speed, or if this is an activity (like cycling) where
      * speed should be displayed, as opposed to pace which is the norm for running. Regardless
      * this callback will always receive speed, so it is up to the client UI to change it based on the user's
