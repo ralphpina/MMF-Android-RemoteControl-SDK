@@ -5,3 +5,5 @@ SampleApp/build/*
 SampleApp/build
 
 /SampleApp/SampleApp.iml
+
+/SampleApp/remote-control-sdk/SampleApp-remote-control-sdk.iml
