@@ -17,6 +17,15 @@ public interface RemoteCommandListener {
     public void onAppStateEvent(AppState appState);
 
     /**
+     * When your application connects to the MMF app, it will automatically
+     * receive a call to this event. It will allow you to tell them what Workout Activity
+     * they have currently set on their phone app. This activity will be used for the recording.
+     *
+     * @param workoutActivity {@link com.mapmyfitness.android.mmfremote.WorkoutActivity} the current Workout Activity of the app
+     */
+    public void onWorkoutActivityChangeEvent(WorkoutActivity workoutActivity);
+
+    /**
      * This command is sent by the MMF app whenever a configuation change
      * happens. This includes:
      * - the user changing the preferred units. They can select

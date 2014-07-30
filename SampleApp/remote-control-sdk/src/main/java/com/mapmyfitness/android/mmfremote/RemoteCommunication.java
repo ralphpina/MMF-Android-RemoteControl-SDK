@@ -84,6 +84,13 @@ public class RemoteCommunication {
     private static final String REMOTE_COMMAND_VERSION_NUMBER = "remote_command_version_number";
     private static final String REMOTE_CONTROL_REQUIRED_MINIMUM_VERSION = "remote_control_required_minimum_version";
 
+    private static final String WORKOUT_ACTIVITY = "workout_activity";
+    private static final int RUN = 16;
+    private static final int WALK = 9;
+    private static final int RIDE = 36;
+    private static final int GYM = 12;
+    private static final int OTHER = -1;
+
     // used to send command and data from Gear Provider apps to our Android apps
     // this is also being used in the Android app
     private static final int REGISTER_REMOTE_CONTROLLER_CLIENT = 1;
@@ -99,6 +106,10 @@ public class RemoteCommunication {
     private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_CANCEL_WORKOUT_START = 11;
     private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_CHECK_VERSION = 12;
     private static final int REMOTE_CONTROLLER_CLIENT_FORCE_UPGRADE = 13;
+    private static final int REMOTE_CONTROLLER_CLIENT_WORKOUT_ACTIVITY = 14;
+    private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_WORKOUT_ACTIVITY = 15;
+    private static final int REMOTE_CONTROLLER_CLIENT_DATA_HEART_RATE = 16;
+    private static final int REMOTE_CONTROLLER_CLIENT_COMMAND_HEART_RATE_STATUS = 17;
 
     protected final static int REMOTE_CONTROL_SDK_VERSION_NUMBER = 1000000; //xx.xxx.xxx <- rest are major , next 2 xx are minor, last 3 xxx are patch
     private final static int MINIMUM_PHONE_VERSION_NUMBER = 3000000;
@@ -350,6 +361,30 @@ public class RemoteCommunication {
         }
     }
 
+    protected void getCurrentWorkoutActivityCommand() {
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentWorkoutActivityCommand ++");
+        }
+        try {
+            mService.send(Message.obtain(null,
+                    REMOTE_CONTROLLER_CLIENT_WORKOUT_ACTIVITY));
+        } catch (RemoteException e) {
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
+        }
+    }
+
+    protected void setWorkoutActivityCommand(WorkoutActivity workoutActivity) {
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentWorkoutActivityCommand ++");
+        }
+        try {
+            mService.send(Message.obtain(null,
+                    REMOTE_CONTROLLER_CLIENT_COMMAND_WORKOUT_ACTIVITY, workoutActivity.getWorkoutActivityId(), 0));
+        } catch (RemoteException e) {
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
+        }
+    }
+
     /**
      * Send start command whether or not we have GPS to RemoteControllerService in MMF apps
      */
@@ -416,6 +451,53 @@ public class RemoteCommunication {
             data.putInt(REMOTE_COMMAND_VERSION_NUMBER, REMOTE_CONTROL_SDK_VERSION_NUMBER);
             msg.setData(data);
             mService.send(msg);
+        } catch (RemoteException e) {
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send the heart rate data in BPM to the phone.
+     *
+     * @param heartRateBPM heart rate in beats per minute
+     */
+    protected void sendHeartrateData(int heartRateBPM) {
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentWorkoutActivityCommand ++");
+        }
+        try {
+            mService.send(Message.obtain(null,
+                    REMOTE_CONTROLLER_CLIENT_DATA_HEART_RATE, heartRateBPM, 0));
+        } catch (RemoteException e) {
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Tell the app we have a device that will be setting heart rate.
+     */
+    protected void setHeartRateConnected() {
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentWorkoutActivityCommand ++");
+        }
+        try {
+            mService.send(Message.obtain(null,
+                    REMOTE_CONTROLLER_CLIENT_COMMAND_HEART_RATE_STATUS, 1, 0));
+        } catch (RemoteException e) {
+            Log.e(RemoteManager.TAG, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Tell the app we have a device that will no longer be setting heart rate.
+     */
+    protected void setHeartRateDisconnected() {
+        if (RemoteManager.DETAIL_LOG) {
+            Log.e(RemoteManager.TAG, "RemoteCommunication ++ getCurrentWorkoutActivityCommand ++");
+        }
+        try {
+            mService.send(Message.obtain(null,
+                    REMOTE_CONTROLLER_CLIENT_COMMAND_HEART_RATE_STATUS, 0, 0));
         } catch (RemoteException e) {
             Log.e(RemoteManager.TAG, e.getMessage(), e);
         }
@@ -552,6 +634,24 @@ public class RemoteCommunication {
 
             if (data.containsKey(CURRENT_STATE)) {
                 onSendToRemoteAppStateEvent(data.getString(CURRENT_STATE));
+            }
+
+            if (data.containsKey(WORKOUT_ACTIVITY)) {
+                if (data.getInt(WORKOUT_ACTIVITY) == RUN) {
+                    onWorkoutActivityChangeEvent(WorkoutActivity.RUN);
+                }
+                if (data.getInt(WORKOUT_ACTIVITY) == WALK) {
+                    onWorkoutActivityChangeEvent(WorkoutActivity.WALK);
+                }
+                if (data.getInt(WORKOUT_ACTIVITY) == RIDE) {
+                    onWorkoutActivityChangeEvent(WorkoutActivity.RIDE);
+                }
+                if (data.getInt(WORKOUT_ACTIVITY) == GYM) {
+                    onWorkoutActivityChangeEvent(WorkoutActivity.GYM);
+                }
+                if (data.getInt(WORKOUT_ACTIVITY) == OTHER) {
+                    onWorkoutActivityChangeEvent(WorkoutActivity.OTHER);
+                }
             }
         }
     }
@@ -752,6 +852,12 @@ public class RemoteCommunication {
 
         if (mRemoteCommandListener != null) {
             mRemoteCommandListener.onAppStateEvent(appState);
+        }
+    }
+
+    private void onWorkoutActivityChangeEvent(WorkoutActivity workoutActivity) {
+        if (mRemoteCommandListener != null) {
+            mRemoteCommandListener.onWorkoutActivityChangeEvent(workoutActivity);
         }
     }
 }

@@ -129,6 +129,8 @@ public class RemoteManager {
     public boolean tryToConnectToMmfApp() {
         if (!isAppConnected() && mAppPackage != null) {
             return mRemoteCommunication.onConnectionTried(mContext, mAppPackage.getIntentActionFilter());
+        } else if (mAppPackage == null) {
+            return false;
         } else {
             return true;
         }
@@ -513,6 +515,18 @@ public class RemoteManager {
         }
 
         return appInfo;
+    }
+
+    public void requestWorkoutActivity() {
+        mRemoteCommunication.getCurrentWorkoutActivityCommand();
+    }
+
+    public void setWorkoutActivity(WorkoutActivity workoutActivity) {
+        mRemoteCommunication.setWorkoutActivityCommand(workoutActivity);
+    }
+
+    public void sendHeartRateDataBPM(int heartRateBPM) {
+        mRemoteCommunication.sendHeartrateData(heartRateBPM);
     }
 
     /**
